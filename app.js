@@ -31,7 +31,7 @@ function save(){
 }
 function saveSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings))}
 function getSystemName(){return String(settings.systemName||'雙發付款管理系統').trim()||'雙發付款管理系統'}
-function applySystemName(){const name=getSystemName();const h=$('#systemNameHeader');if(h)h.textContent=name;document.title=`${name} V6.4 名稱自訂開發版`;const apple=document.querySelector('meta[name="apple-mobile-web-app-title"]');if(apple)apple.setAttribute('content',name.slice(0,12))}
+function applySystemName(){const name=getSystemName();const h=$('#systemNameHeader');if(h)h.textContent=name;document.title=`${name} V7.0 個人離線正式版`;const apple=document.querySelector('meta[name="apple-mobile-web-app-title"]');if(apple)apple.setAttribute('content',name.slice(0,12))}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function money(n){return Number(n||0).toLocaleString('zh-TW')}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
@@ -158,7 +158,7 @@ $('#resetSystemName').onclick=()=>{if(!confirm('確定恢復成「雙發付款�
 $('#addBank').onclick=()=>{const v=$('#newBank').value.trim();if(!v)return;if(!db.banks.includes(v))db.banks.push(v);db.checks[v]??=[];$('#newBank').value='';save();renderSettings()};$('#addMethod').onclick=()=>{const v=$('#newMethod').value.trim();if(v&&!db.methods.includes(v))db.methods.push(v);$('#newMethod').value='';save();renderSettings()};
 $('#autoBackupToggle').onchange=e=>{settings.autoBackup=e.target.checked;saveSettings();renderBackupStatus()};function renderBackupStatus(){const snaps=JSON.parse(localStorage.getItem(BACKUP_KEY)||'[]'),last=localStorage.getItem('shuangfa_last_backup');$('#backupStatus').innerHTML=`自動備份：<b>${settings.autoBackup?'開啟':'關閉'}</b><br>手機內備份：${snaps.length} 份<br>最近完整備份：${last?new Date(last).toLocaleString('zh-TW'):'尚未備份'}`}
 function backupFileName(){const d=new Date(),z=n=>String(n).padStart(2,'0');return `雙發付款完整備份_${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}_${z(d.getHours())}-${z(d.getMinutes())}.json`}
-function downloadBackup(msg=true){const payload={app:getSystemName(),version:'V6.4 名稱自訂開發版',backupAt:new Date().toISOString(),data:db,settings},blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=backupFileName();a.click();URL.revokeObjectURL(a.href);localStorage.setItem('shuangfa_last_backup',new Date().toISOString());renderBackupStatus();if(msg)toast('完整備份檔已產生')}
+function downloadBackup(msg=true){const payload={app:getSystemName(),version:'V7.0 個人離線正式版',backupAt:new Date().toISOString(),data:db,settings},blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=backupFileName();a.click();URL.revokeObjectURL(a.href);localStorage.setItem('shuangfa_last_backup',new Date().toISOString());renderBackupStatus();if(msg)toast('完整備份檔已產生')}
 $('#exportBtn').onclick=()=>downloadBackup(true);$('#importInput').onchange=async e=>{try{const raw=JSON.parse(await e.target.files[0].text()),x=raw.data||raw;if(!x.payments||!x.vendors)throw 0;db=migrate(x);if(raw.settings)settings=raw.settings;save();saveSettings();renderLists();renderSettings();toast('完整備份已還原')}catch{toast('備份檔格式不正確')}};
 function renderDue(){const t=new Date();t.setHours(0,0,0,0);const tm=new Date(t);tm.setDate(t.getDate()+1);const a=db.payments.filter(p=>p.status!=='已銷帳'&&p.status!=='作廢').filter(p=>{const ds=p.method==='支票'?p.checkDueDate:p.transferDate;if(!ds)return false;const d=new Date(ds+'T00:00:00');return d.getTime()===t.getTime()||d.getTime()===tm.getTime()||d<t});$('#dueNotice').classList.toggle('hidden',!a.length);if(a.length)$('#dueNotice').innerHTML='<b>🔔 付款提醒</b><br>'+a.map(p=>`${esc(p.serial)}｜${esc(p.vendor)}｜${esc(voucher(p))}｜$${money(p.amountPaid)}｜${esc(p.status)}`).join('<br>')}
 
@@ -218,7 +218,7 @@ $('#runOcr').onclick=async()=>{
 applySystemName();renderLists();renderDue();
 
 
-// ===== V6.3 個人離線版：PWA 安裝與更新 =====
+// ===== V7.0 個人離線正式版：PWA 安裝與更新 =====
 function updateOfflineStatus(){
   const el=document.querySelector('#offlineStatus');
   if(!el)return;
