@@ -47,7 +47,7 @@ async function optimizeStoredPhotos(){let changed=0;for(const p of db.payments||
 async function saveWithStorageRecovery(currentId){try{return save()}catch(err){if(err?.code!=='STORAGE_QUOTA'&&err?.message!=='STORAGE_QUOTA')throw err;toast('儲存空間不足，正在壓縮照片…');speak('手機儲存空間不足，系統正在壓縮照片，照片不會刪除。');try{downloadBackup(false)}catch{}const changed=await optimizeStoredPhotos();try{const ok=save();renderStorageStatus();if(changed){toast(`已壓縮 ${changed} 份照片，所有照片均保留`);speak('照片壓縮完成，所有照片均已保留。')}return ok}catch(err2){if(err2?.code!=='STORAGE_QUOTA'&&err2?.message!=='STORAGE_QUOTA')throw err2;alert('手機瀏覽器的儲存空間已滿。系統不會刪除任何照片，因此這筆資料尚未存入。\n\n請先按「立即完整備份」，再清理其他手機檔案，或改用容量較大的裝置後匯入備份。');speak('儲存空間仍然不足。系統沒有刪除任何照片，請先完整備份。');throw new Error('手機儲存空間不足；為保留全部照片，系統已停止存檔。')}}}
 async function compressAllPhotosSafely(){if(!confirm('系統只會壓縮照片容量，不會刪除任何請款單、支票照片或簽名。確定開始？'))return;const before=dbSizeBytes();const changed=await optimizeStoredPhotos();try{save();const after=dbSizeBytes();renderStorageStatus();const saved=Math.max(0,before-after);toast(`已壓縮 ${changed} 份照片，沒有刪除資料`);speak('照片壓縮完成，所有照片均已保留。');alert(`壓縮完成。\n處理照片：${changed} 份\n節省空間：約 ${fmtSize(saved)}\n所有照片與簽名均完整保留。`)}catch(e){alert('壓縮後仍超過手機瀏覽器容量，但系統沒有刪除任何照片。請先匯出完整備份，再改用容量較大的裝置。')}}
 function renderStorageStatus(){const el=$('#storageStatus');if(!el)return;const bytes=dbSizeBytes();let photos=0;(db.payments||[]).forEach(p=>photos+=(p.invoicePhotos||[]).length+(p.checkPhoto?1:0)+(p.signatureData?1:0));el.innerHTML=`目前資料量：<b>${fmtSize(bytes)}</b><br>手機內照片與簽名：<b>${photos} 份</b><br><small>所有照片永久保留。空間不足時只會壓縮，不會自動刪除。</small>`}
-const titles={home:'首頁',vendor:'新增付款',payment:'付款資料',method:'付款方式',bank:'選擇銀行',check:'支票／轉帳資料',photos:'拍照存證',signature:'廠商簽名',confirm:'確認資料',done:'完成',search:'查詢付款',detail:'付款明細',checks:'支票管理',report:'報表中心',vendors:'廠商基本資料',settings:'系統設定'};
+const titles={home:'首頁',vendor:'新增付款',payment:'付款資料',method:'付款方式',bank:'選擇銀行',check:'支票／轉帳資料',photos:'拍照存證',signature:'廠商簽名',confirm:'確認資料',done:'完成',search:'查詢付款',detail:'付款明細',checks:'支票管理',report:'報表中心',vendors:'廠商基本資料',settings:'系統設定',todayMail:'本日郵寄清單'};
 function show(id,push=true){$$('.page').forEach(p=>p.classList.toggle('active',p.id===id));$('#pageTitle').textContent=titles[id]||'';$('#backBtn').classList.toggle('hidden',id==='home');$('#homeBtn').classList.toggle('hidden',id==='home');if(push&&history.at(-1)!==id)history.push(id);scrollTo(0,0);if(id==='signature')setTimeout(sizeCanvas,80);if(id==='search')runSearch();if(id==='checks')renderChecks();if(id==='report')renderReportControls();if(id==='settings')renderSettings();if(id==='vendors')renderVendorManager();if(id==='vendor')renderLists()}
 $('#backBtn').onclick=()=>{history.pop();show(history.at(-1)||'home',false)};$('#homeBtn').onclick=()=>{history=['home'];show('home',false)};$$('[data-go]').forEach(b=>b.onclick=()=>{const id=b.dataset.go;if(id==='vendor')start();show(id)});
 function vendorLabel(v){return `${v.code}－${v.name}`}
@@ -331,7 +331,7 @@ let swRegistration=null;
 if('serviceWorker' in navigator){
   window.addEventListener('load',async()=>{
     try{
-      swRegistration=await navigator.serviceWorker.register('./sw.js?v=8313',{scope:'./',updateViaCache:'none'});
+      swRegistration=await navigator.serviceWorker.register('./sw.js?v=8314',{scope:'./',updateViaCache:'none'});
       updateOfflineStatus();
     }catch(err){
       console.error('離線功能安裝失敗',err);
@@ -367,3 +367,51 @@ if(updateBtn)updateBtn.onclick=async()=>{
     updateBtn.textContent='連網時檢查更新';
   }
 };
+
+
+// ===== V8.3 DEV Build 014：清除付款資料與本日郵寄清單 =====
+function todayMailItems(dateValue){
+  const d=dateValue||new Date().toISOString().slice(0,10);
+  return db.payments.filter(p=>p.method==='郵寄支票'&&((p.mailDate||'')===d||(!p.mailDate&&(p.createdAt||'').slice(0,10)===d)));
+}
+function renderTodayMail(){
+  const input=$('#todayMailDate');if(!input)return;
+  if(!input.value)input.value=new Date().toISOString().slice(0,10);
+  const a=todayMailItems(input.value),total=a.reduce((s,p)=>s+Number(p.amountPaid||0),0);
+  const stickers=[...new Set(a.map(p=>p.mailStickerNumber).filter(Boolean))];
+  $('#todayMailSummary').innerHTML=`寄件日期：<b>${esc(input.value)}</b><br>共 <b>${a.length}</b> 筆｜合計 <b>NT$ ${money(total)}</b><br>郵寄貼紙號碼：${stickers.length?stickers.map(esc).join('、'):'尚未填寫'}`;
+  $('#todayMailList').innerHTML=a.length?a.map((p,i)=>`<div class="record"><h3>${i+1}. ${esc(p.vendorCode||'')} ${esc(p.vendor||'')}</h3><div class="meta">支票號碼：${esc(p.checkNumber||'—')}<br>到期日：${esc(p.checkDueDate||'—')}｜金額：NT$ ${money(p.amountPaid)}<br>貼紙號碼：${esc(p.mailStickerNumber||'—')}</div><button class="secondary full" data-mail-detail="${p.id}">查看明細</button></div>`).join(''):'<p class="hint">這一天沒有郵寄支票資料。</p>';
+  $$('[data-mail-detail]').forEach(b=>b.onclick=()=>openDetail(b.dataset.mailDetail));
+}
+function printTodayMailList(){
+  const date=$('#todayMailDate')?.value||new Date().toISOString().slice(0,10),a=todayMailItems(date);
+  if(!a.length)return toast('這一天沒有郵寄支票資料');
+  const stickers=[...new Set(a.map(p=>p.mailStickerNumber).filter(Boolean))].join('、');
+  printMailBatch(a,a.length,stickers,date);
+}
+async function clearPaymentDataSafely(){
+  if(!db.payments.length&&!db.auditLogs?.length&&!db.corrections?.length)return toast('目前沒有付款資料可以清除');
+  if(!confirm('系統會先下載完整備份，再清除所有付款紀錄、照片、簽名及修改紀錄。\n\n廠商、銀行、登入帳號與密碼都會保留。\n\n確定繼續嗎？'))return;
+  downloadBackup();
+  const typed=prompt('為避免誤刪，請輸入「清除」兩個字：','');
+  if(typed!=='清除')return toast('輸入不正確，已取消清除資料');
+  db.payments=[];
+  db.auditLogs=[];
+  db.corrections=[];
+  Object.keys(db.checks||{}).forEach(bank=>db.checks[bank]=(db.checks[bank]||[]).map(x=>({...x,status:'未使用'})));
+  mailBatchSession={ids:[],stickerNumber:'',mailDate:'',expectedCount:0};
+  save();renderLists();renderStorageStatus();renderTodayMail();
+  toast('付款資料已清除，廠商、設定及登入資料均已保留');
+  if(window.shuangfaSpeak)window.shuangfaSpeak('付款資料已清除，備份已經完成。','success');
+  alert('清除完成。\n\n已清除：付款紀錄、照片、簽名、修改紀錄。\n已保留：廠商、銀行、系統設定、登入帳號與密碼。');
+  show('home');
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  const d=$('#todayMailDate');if(d)d.value=new Date().toISOString().slice(0,10);
+  $('#refreshTodayMail')?.addEventListener('click',renderTodayMail);
+  $('#todayMailDate')?.addEventListener('change',renderTodayMail);
+  $('#printTodayMail')?.addEventListener('click',printTodayMailList);
+  $('#clearPaymentDataBtn')?.addEventListener('click',clearPaymentDataSafely);
+});
+const _showBuild014=show;
+show=function(id,push=true){_showBuild014(id,push);if(id==='todayMail')renderTodayMail();};

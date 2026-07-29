@@ -172,7 +172,7 @@
         <div class="login-panel">
           <img src="icon-192.png" alt="雙發付款" class="login-logo">
           <h2>雙發付款管理系統</h2>
-          <p>V8.3 DEV Build 013・郵寄總筆數列印版</p>
+          <p>V8.3 DEV Build 014・正式測試版</p>
           <label>登入代碼<input id="loginCode" autocomplete="username" value="admin"></label>
           <label>登入密碼<input id="loginPassword" type="password" autocomplete="current-password" inputmode="numeric"></label>
           <label class="remember-row"><input id="rememberLogin" type="checkbox" checked> 記住登入</label>
