@@ -1,4 +1,4 @@
-/* 雙發付款管理系統 V8.3 DEV Build 020
+/* 雙發付款管理系統 V8.3 DEV Build 021
    登入權限、已付款鎖定、修改紀錄、智慧語音提醒 */
 (() => {
   'use strict';
@@ -253,11 +253,6 @@
         <button id="changePassword" class="primary full">修改密碼</button>
         <button id="logoutBtn" class="secondary full">登出</button>
       </div>
-      <div class="card" id="systemInfoCard"><h3>ℹ️ 系統資訊</h3>
-        <div class="backup-status"><b>目前版本</b><br>V8.3 DEV Build 020<br><small>版本資訊與修改紀錄密碼移除版</small></div>
-        <p class="hint">最後更新：2026/07/29<br>資料庫版本：DB 3.0</p>
-        <button id="copySystemInfo" class="secondary full">📋 複製系統資訊</button>
-      </div>
 `);
   }
 
@@ -344,8 +339,43 @@
     renderUser();
     resetIdleTimer();
     saveAudit('登入');
-    speak(`${user.name}您好，登入成功。`, 'success', true);
+    speak(`歡迎進入${typeof getSystemName === 'function' ? getSystemName() : '雙發付款管理系統'}。`, 'success', true);
     queueStartupAnnouncements();
+  }
+
+  function playWindowsStyleLogoutSound() {
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return Promise.resolve();
+      const context = new AudioContextClass();
+      const now = context.currentTime;
+      const master = context.createGain();
+      master.gain.setValueAtTime(0.0001, now);
+      master.gain.exponentialRampToValueAtTime(0.16, now + 0.03);
+      master.gain.exponentialRampToValueAtTime(0.0001, now + 1.15);
+      master.connect(context.destination);
+      [659.25, 523.25, 392.0].forEach((frequency, index) => {
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        const start = now + index * 0.22;
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(frequency, start);
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.exponentialRampToValueAtTime(0.8, start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.42);
+        oscillator.connect(gain);
+        gain.connect(master);
+        oscillator.start(start);
+        oscillator.stop(start + 0.45);
+      });
+      return new Promise(resolve => setTimeout(() => {
+        context.close().catch(() => {});
+        resolve();
+      }, 1200));
+    } catch (error) {
+      console.warn('登出提示音播放失敗', error);
+      return Promise.resolve();
+    }
   }
 
   function logout(auto = false, skipAudit = false) {
@@ -596,7 +626,7 @@
     q('#loginSubmit').onclick = login;
     q('#loginCode').addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); q('#loginPassword').focus(); } });
     q('#loginPassword').addEventListener('keydown', event => { if (event.key === 'Enter') login(); });
-    const backupAndLogout = () => {
+    const backupAndLogout = async () => {
       if (!confirm('確定要登出嗎？\n\n系統會先自動下載完整備份，再登出。')) return;
       try {
         if (currentUser) saveAudit('登出');
@@ -609,7 +639,9 @@
         speak('備份失敗，系統尚未登出。', 'error', true);
         return;
       }
-      setTimeout(() => logout(false, true), 1500);
+      await new Promise(resolve => setTimeout(resolve, 1050));
+      await playWindowsStyleLogoutSound();
+      logout(false, true);
     };
     q('#logoutBtn').onclick = backupAndLogout;
     const homeLogoutBtn = q('#homeLogoutBtn');
@@ -650,7 +682,7 @@
 
     const copySystemInfo = q('#copySystemInfo');
     if (copySystemInfo) copySystemInfo.onclick = async () => {
-      const text = `${typeof getSystemName === 'function' ? getSystemName() : '雙發付款管理系統'}\nV8.3 DEV Build 020\n資料庫版本：DB 3.0\n最後更新：2026/07/29`;
+      const text = `${typeof getSystemName === 'function' ? getSystemName() : '雙發付款管理系統'}\nV8.3 DEV Build 021\n資料庫版本：DB 3.0\n最後更新：2026/07/29`;
       try {
         await navigator.clipboard.writeText(text);
         originalToast('系統資訊已複製');
