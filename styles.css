@@ -482,3 +482,5 @@ body.login-locked>.topbar,body.login-locked>main,body.login-locked>#photoViewer{
 .login-input-icon{font-size:22px;line-height:1;flex:0 0 auto}
 .login-input-row input{width:100%;min-width:0;margin:0;border:0!important;outline:0!important;box-shadow:none!important;background:transparent;padding:15px 0;font-size:18px;min-height:54px}
 .login-input-row input::placeholder{color:#81989b}
+
+.home-card.logout-card{border-color:#f0c8c8;background:#fffafa;color:#8c2f2f}.home-card.logout-card::before{content:'↪';background:#fdeaea;color:#a33;border-color:#f2cccc}.home-card.logout-card span{color:#8b5a5a}

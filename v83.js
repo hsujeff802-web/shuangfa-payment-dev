@@ -328,6 +328,8 @@
     const target = q('#rememberLogin').checked ? localStorage : sessionStorage;
     target.setItem(SESSION_KEY, JSON.stringify(currentUser));
     hideLogin();
+    history = ['home'];
+    if (typeof show === 'function') show('home', false);
     renderUser();
     resetIdleTimer();
     saveAudit('登入');
@@ -354,6 +356,8 @@
     }
     if (currentUser) {
       hideLogin();
+      history = ['home'];
+      if (typeof show === 'function') show('home', false);
       renderUser();
       resetIdleTimer();
       queueStartupAnnouncements();
@@ -541,7 +545,9 @@
     q('#loginSubmit').onclick = login;
     q('#loginCode').addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); q('#loginPassword').focus(); } });
     q('#loginPassword').addEventListener('keydown', event => { if (event.key === 'Enter') login(); });
-    q('#logoutBtn').onclick = () => logout(false);
+    q('#logoutBtn').onclick = () => { if (confirm('確定要登出嗎？')) logout(false); };
+    const homeLogoutBtn = q('#homeLogoutBtn');
+    if (homeLogoutBtn) homeLogoutBtn.onclick = () => { if (confirm('確定要登出嗎？')) logout(false); };
 
     ['voiceEnabled', 'voiceErrors', 'voiceSuccess', 'voiceBackup', 'voiceDue'].forEach(id => q(`#${id}`).addEventListener('change', saveVoiceSettings));
     ['voiceVolume', 'voiceRate'].forEach(id => q(`#${id}`).addEventListener('input', saveVoiceSettings));
