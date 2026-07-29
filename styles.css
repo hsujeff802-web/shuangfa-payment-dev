@@ -472,3 +472,13 @@ body.login-locked>.topbar,body.login-locked>main,body.login-locked>#photoViewer{
   .login-panel{padding:22px 18px 20px;border-radius:22px}
   .login-logo{width:138px;height:138px}
 }
+
+
+/* Build 017：首頁隱藏版本、登入欄位簡潔化 */
+.version-tag{display:none!important}
+.login-brand p{display:none!important}
+.login-input-row{display:flex;align-items:center;gap:10px;margin:14px 0;padding:0 14px;border:1px solid #c9e0e2;border-radius:15px;background:#fff;box-shadow:inset 0 1px 2px rgba(12,70,74,.04)}
+.login-input-row:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px rgba(21,154,163,.14)}
+.login-input-icon{font-size:22px;line-height:1;flex:0 0 auto}
+.login-input-row input{width:100%;min-width:0;margin:0;border:0!important;outline:0!important;box-shadow:none!important;background:transparent;padding:15px 0;font-size:18px;min-height:54px}
+.login-input-row input::placeholder{color:#81989b}

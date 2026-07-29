@@ -1,4 +1,4 @@
-/* 雙發付款管理系統 V8.3 DEV Build 016
+/* 雙發付款管理系統 V8.3 DEV Build 017
    登入權限、已付款鎖定、修改紀錄、智慧語音提醒 */
 (() => {
   'use strict';
@@ -173,14 +173,18 @@
           <div class="login-brand">
             <img src="icon-192.png" alt="系統 Logo" class="login-logo">
             <h2 id="loginSystemName">雙發付款管理系統</h2>
-            <p>V8.3 DEV Build 016・Logo置中名稱同步版</p>
           </div>
-          <label>登入代碼<input id="loginCode" autocomplete="username" value="admin"></label>
-          <label>登入密碼<input id="loginPassword" type="password" autocomplete="current-password" inputmode="numeric"></label>
+          <div class="login-input-row">
+            <span class="login-input-icon" aria-hidden="true">👤</span>
+            <input id="loginCode" autocomplete="username" autocapitalize="none" placeholder="請輸入登入代碼" aria-label="登入代碼">
+          </div>
+          <div class="login-input-row">
+            <span class="login-input-icon" aria-hidden="true">🔒</span>
+            <input id="loginPassword" type="password" autocomplete="current-password" inputmode="numeric" placeholder="請輸入密碼" aria-label="登入密碼">
+          </div>
           <label class="remember-row"><input id="rememberLogin" type="checkbox" checked> 記住登入</label>
           <button id="loginSubmit" class="primary full">登入</button>
           <div id="loginMessage" class="login-message"></div>
-          <small>初次登入代碼：admin　密碼：1234</small>
         </div>
       </div>
       <div id="correctionModal" class="correction-modal hidden" aria-modal="true" role="dialog">
@@ -258,7 +262,7 @@
     syncLoginBrand();
     document.body.classList.add('login-locked');
     q('#loginGate').classList.remove('hidden');
-    setTimeout(() => q('#loginPassword').focus(), 100);
+    setTimeout(() => { const code=q('#loginCode'); const password=q('#loginPassword'); (code && !code.value ? code : password).focus(); }, 100);
   }
 
   function hideLogin() {
@@ -535,6 +539,7 @@
 
   function installEvents() {
     q('#loginSubmit').onclick = login;
+    q('#loginCode').addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); q('#loginPassword').focus(); } });
     q('#loginPassword').addEventListener('keydown', event => { if (event.key === 'Enter') login(); });
     q('#logoutBtn').onclick = () => logout(false);
 
