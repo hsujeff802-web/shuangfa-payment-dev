@@ -414,3 +414,25 @@ button:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
 /* ===== V8.3 DEV Build 001：登入與智慧語音 ===== */
 .login-gate{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:20px;background:linear-gradient(150deg,rgba(230,252,255,.97),rgba(255,255,255,.98),rgba(234,248,246,.97));backdrop-filter:blur(10px)}
 .login-gate.hidden{display:none}.login-panel{width:min(430px,100%);padding:28px;border:1px solid rgba(21,154,163,.18);border-radius:28px;background:#fff;box-shadow:0 24px 70px rgba(23,79,84,.18);text-align:center}.login-logo{width:76px;height:76px;border-radius:20px;box-shadow:0 10px 25px rgba(21,154,163,.22)}.login-panel h2{margin:14px 0 4px}.login-panel p{margin:0 0 18px;color:#4d7377}.login-panel label{text-align:left}.remember-row{display:flex!important;align-items:center;gap:8px;margin:6px 0 16px}.remember-row input{width:auto}.login-message{min-height:28px;color:#b42318;font-weight:700;padding-top:8px}.login-user-tag{display:block;margin-top:5px;color:#075e66;font-weight:700;white-space:nowrap}.audit-row{display:grid;gap:4px;padding:12px 0;border-bottom:1px solid #e2efef}.audit-row span,.audit-row small{color:#5d7275}.audit-row small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ===== V8.3 DEV Build 001：修改紀錄與語音安全模組 ===== */
+#homeRevisionCard::before{content:"記";font-size:17px}
+.login-user-tag{display:block;margin-top:5px;color:rgba(255,255,255,.92);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.voice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:8px 0 4px}
+.voice-grid .toggle-row{margin:0;padding:12px;background:var(--surface-soft);border:1px solid var(--line);border-radius:13px}
+input[type="range"]{min-height:34px;padding:0;border:0;box-shadow:none;background:transparent}
+.lock-notice{margin:0 0 14px;padding:13px 15px;border:1px solid #f0d79c;border-radius:14px;background:#fff8e8;color:#73551b;font-size:14px;font-weight:750;line-height:1.55}
+.correction-modal{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:18px;background:rgba(15,52,58,.54);backdrop-filter:blur(8px);overflow:auto}
+.correction-modal.hidden{display:none}
+.correction-panel{width:min(560px,100%);max-height:calc(100vh - 36px);overflow:auto;padding:22px;border:1px solid rgba(21,154,163,.22);border-radius:24px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.25)}
+.correction-panel h2{margin:0 0 13px;color:var(--brand-deep)}
+.mini-summary{margin-bottom:14px;padding:13px;border:1px solid var(--line);border-radius:14px;background:var(--surface-soft);line-height:1.65}
+.correction-row{margin:11px 0;padding:15px;border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:15px;background:#fff;box-shadow:var(--shadow-sm)}
+.correction-row h4{margin:0 0 8px;color:var(--brand-deep);font-size:16px}
+.correction-row p{margin:8px 0;color:#38575c;line-height:1.6}
+.correction-row>small{display:block;color:var(--muted)}
+.correction-change{display:grid;grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);gap:7px;align-items:center;padding:10px;border-radius:12px;background:var(--surface-soft);word-break:break-word}
+.correction-change span{display:grid;gap:3px}.correction-change small{color:var(--muted)}.correction-change strong{text-align:center;color:var(--accent);font-size:20px}
+.correction-empty{padding:14px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);text-align:center}
+#detailRevisionHistory{margin-top:18px}#detailRevisionHistory>h3{color:var(--brand-deep)}
+@media(max-width:520px){.voice-grid{grid-template-columns:1fr}.correction-change{grid-template-columns:1fr}.correction-change strong{transform:rotate(90deg)}}
