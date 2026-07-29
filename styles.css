@@ -3,3 +3,5 @@
 .toggle-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 0}.toggle-row span{display:flex;flex-direction:column;gap:4px}.toggle-row small{color:#6f7e83;font-weight:400}.toggle-row input{width:28px;height:28px}.backup-status{margin:12px 0;padding:12px;border-radius:12px;background:#eef6f7;color:#24515b;font-size:14px;line-height:1.6}
 
 button:disabled{opacity:.55;cursor:not-allowed}.primary:disabled{background:#78949b}
+
+.setting-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.setting-grid label{margin:6px 0}@media(max-width:430px){.setting-grid{grid-template-columns:1fr}}
