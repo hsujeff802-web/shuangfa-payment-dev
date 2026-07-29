@@ -1,9 +1,9 @@
-const CACHE_NAME='shuangfa-payment-v8.3-build021-version-revision-delete';
+const CACHE_NAME='shuangfa-payment-v8.3-build023-version-revision-delete';
 const APP_SHELL=[
   './',
   './index.html',
-  './styles.css?v=8321',
-  './app.js?v=8321','./v83.js?v=8321',
+  './styles.css?v=8323',
+  './app.js?v=8323','./v83.js?v=8323',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'

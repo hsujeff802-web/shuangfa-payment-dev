@@ -1,4 +1,4 @@
-/* 雙發付款管理系統 V8.3 DEV Build 021
+/* 雙發付款管理系統 V8.3 DEV Build 023
    登入權限、已付款鎖定、修改紀錄、智慧語音提醒 */
 (() => {
   'use strict';
@@ -244,6 +244,22 @@
         <label>語音速度 <b id="voiceRateText">正常</b><input id="voiceRate" type="range" min="0.7" max="1.3" step="0.1"></label>
         <button id="testVoice" class="secondary full">測試語音：資料已備份完成</button>
       </div>
+      <div class="card" id="loginLogoutSoundCard"><h3>🎵 登入／登出聲音</h3>
+        <p class="hint">可自訂登入歡迎詞，也可從手機或電腦選擇 MP3、WAV、M4A 音樂。音樂會存入本機設定並包含在完整備份中。</p>
+        <label class="toggle-row"><span><b>啟用登入歡迎聲音</b><small>登入成功後播放</small></span><input id="loginSoundEnabled" type="checkbox"></label>
+        <label>登入歡迎詞<input id="loginWelcomeText" maxlength="80" placeholder="歡迎進入{系統名稱}"></label>
+        <label>登入播放方式<select id="loginPlayMode"><option value="voice">只播放歡迎詞</option><option value="music">只播放自訂音樂</option><option value="musicVoice">先音樂、再歡迎詞</option><option value="voiceMusic">先歡迎詞、再音樂</option></select></label>
+        <label class="secondary full file-label">選擇登入音樂<input id="loginMusicInput" type="file" accept="audio/*,.mp3,.wav,.m4a,.aac"></label>
+        <div id="loginMusicName" class="backup-status">尚未選擇登入音樂</div>
+        <div class="inline"><button id="testLoginSound" class="secondary">試聽登入聲音</button><button id="removeLoginMusic" class="secondary">移除登入音樂</button></div>
+        <hr>
+        <label class="toggle-row"><span><b>啟用登出聲音</b><small>完成登出前播放</small></span><input id="logoutSoundEnabled" type="checkbox"></label>
+        <label>登出聲音<select id="logoutSoundMode"><option value="windows">Windows 風格提示音</option><option value="custom">自訂音樂</option><option value="none">無聲</option></select></label>
+        <label class="secondary full file-label">選擇登出音樂<input id="logoutMusicInput" type="file" accept="audio/*,.mp3,.wav,.m4a,.aac"></label>
+        <div id="logoutMusicName" class="backup-status">尚未選擇登出音樂</div>
+        <div class="inline"><button id="testLogoutSound" class="secondary">試聽登出聲音</button><button id="removeLogoutMusic" class="secondary">移除登出音樂</button></div>
+        <button id="saveLoginLogoutSound" class="primary full">儲存登入／登出設定</button>
+      </div>
       <div class="card"><h3>🔐 登入與密碼</h3>
         <p id="currentLoginInfo" class="hint"></p>
         <div id="defaultPasswordNotice" class="lock-notice hidden">目前仍使用初始密碼 1234，建議立即修改。</div>
@@ -339,8 +355,108 @@
     renderUser();
     resetIdleTimer();
     saveAudit('登入');
-    speak(`歡迎進入${typeof getSystemName === 'function' ? getSystemName() : '雙發付款管理系統'}。`, 'success', true);
+    playLoginWelcome();
     queueStartupAnnouncements();
+  }
+
+  function audioSettings() {
+    return {
+      loginEnabled: settings.loginSoundEnabled !== false,
+      loginText: settings.loginWelcomeText || '歡迎進入{系統名稱}',
+      loginMode: settings.loginPlayMode || 'voice',
+      loginMusicData: settings.loginMusicData || '',
+      loginMusicName: settings.loginMusicName || '',
+      logoutEnabled: settings.logoutSoundEnabled !== false,
+      logoutMode: settings.logoutSoundMode || 'windows',
+      logoutMusicData: settings.logoutMusicData || '',
+      logoutMusicName: settings.logoutMusicName || ''
+    };
+  }
+
+  function playAudioData(dataUrl) {
+    if (!dataUrl) return Promise.resolve(false);
+    return new Promise(resolve => {
+      try {
+        const audio = new Audio(dataUrl);
+        audio.volume = voiceSettings().volume;
+        const done = result => { audio.onended = audio.onerror = null; resolve(result); };
+        audio.onended = () => done(true);
+        audio.onerror = () => done(false);
+        const result = audio.play();
+        if (result?.catch) result.catch(() => done(false));
+      } catch { resolve(false); }
+    });
+  }
+
+  function speakPromise(text) {
+    return new Promise(resolve => {
+      if (!text || !('speechSynthesis' in window)) return resolve(false);
+      try {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'zh-TW';
+        utterance.rate = voiceSettings().rate;
+        utterance.volume = voiceSettings().volume;
+        const voice = getChineseVoice();
+        if (voice) utterance.voice = voice;
+        utterance.onend = () => resolve(true);
+        utterance.onerror = () => resolve(false);
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+      } catch { resolve(false); }
+    });
+  }
+
+  async function playLoginWelcome() {
+    const a = audioSettings();
+    if (!a.loginEnabled) return;
+    const systemName = typeof getSystemName === 'function' ? getSystemName() : '雙發付款管理系統';
+    const text = String(a.loginText || '歡迎進入{系統名稱}').replaceAll('{系統名稱}', systemName);
+    if (a.loginMode === 'music') return playAudioData(a.loginMusicData);
+    if (a.loginMode === 'musicVoice') { await playAudioData(a.loginMusicData); return speakPromise(text); }
+    if (a.loginMode === 'voiceMusic') { await speakPromise(text); return playAudioData(a.loginMusicData); }
+    return speakPromise(text);
+  }
+
+  async function playLogoutSound() {
+    const a = audioSettings();
+    if (!a.logoutEnabled || a.logoutMode === 'none') return;
+    if (a.logoutMode === 'custom' && a.logoutMusicData) return playAudioData(a.logoutMusicData);
+    return playWindowsStyleLogoutSound();
+  }
+
+  function fileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      if (!file) return resolve('');
+      if (file.size > 5 * 1024 * 1024) return reject(new Error('音樂檔請小於 5MB'));
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(new Error('讀取音樂檔失敗'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function applyAudioSettings() {
+    const a = audioSettings();
+    q('#loginSoundEnabled').checked = a.loginEnabled;
+    q('#loginWelcomeText').value = a.loginText;
+    q('#loginPlayMode').value = a.loginMode;
+    q('#logoutSoundEnabled').checked = a.logoutEnabled;
+    q('#logoutSoundMode').value = a.logoutMode;
+    q('#loginMusicName').textContent = a.loginMusicName ? `目前登入音樂：${a.loginMusicName}` : '尚未選擇登入音樂';
+    q('#logoutMusicName').textContent = a.logoutMusicName ? `目前登出音樂：${a.logoutMusicName}` : '尚未選擇登出音樂';
+  }
+
+  function showLogoutChoice() {
+    return new Promise(resolve => {
+      const old = q('#logoutChoiceOverlay'); if (old) old.remove();
+      const overlay = document.createElement('div');
+      overlay.id = 'logoutChoiceOverlay';
+      overlay.className = 'logout-choice-overlay';
+      overlay.innerHTML = `<div class="logout-choice-panel"><h3>確定要登出？</h3><p class="hint">請選擇是否先下載完整備份。</p><button data-choice="backup" class="primary full">📦 備份後登出</button><button data-choice="direct" class="secondary full">🚪 不儲存直接登出</button><button data-choice="cancel" class="secondary full">取消</button></div>`;
+      document.body.appendChild(overlay);
+      overlay.querySelectorAll('[data-choice]').forEach(btn => btn.onclick = () => { const value=btn.dataset.choice; overlay.remove(); resolve(value); });
+      overlay.onclick = event => { if (event.target === overlay) { overlay.remove(); resolve('cancel'); } };
+    });
   }
 
   function playWindowsStyleLogoutSound() {
@@ -627,20 +743,26 @@
     q('#loginCode').addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); q('#loginPassword').focus(); } });
     q('#loginPassword').addEventListener('keydown', event => { if (event.key === 'Enter') login(); });
     const backupAndLogout = async () => {
-      if (!confirm('確定要登出嗎？\n\n系統會先自動下載完整備份，再登出。')) return;
-      try {
-        if (currentUser) saveAudit('登出');
-        if (typeof downloadBackup === 'function') downloadBackup(false);
-        originalToast('完整備份已完成，準備登出');
-        speak('資料已備份完成。', 'backup');
-      } catch (error) {
-        console.error('登出備份失敗', error);
-        originalToast('備份失敗，尚未登出');
-        speak('備份失敗，系統尚未登出。', 'error', true);
-        return;
+      const choice = await showLogoutChoice();
+      if (choice === 'cancel') return;
+      if (choice === 'direct' && !confirm('確定不備份就直接登出？\n\n這次不會下載備份檔。')) return;
+      if (choice === 'backup') {
+        try {
+          if (currentUser) saveAudit('登出');
+          if (typeof downloadBackup === 'function') downloadBackup(false);
+          originalToast('完整備份已完成，準備登出');
+          speak('資料已備份完成。', 'backup');
+          await new Promise(resolve => setTimeout(resolve, 1050));
+        } catch (error) {
+          console.error('登出備份失敗', error);
+          originalToast('備份失敗，尚未登出');
+          speak('備份失敗，系統尚未登出。', 'error', true);
+          return;
+        }
+      } else if (currentUser) {
+        saveAudit('不備份直接登出');
       }
-      await new Promise(resolve => setTimeout(resolve, 1050));
-      await playWindowsStyleLogoutSound();
+      await playLogoutSound();
       logout(false, true);
     };
     q('#logoutBtn').onclick = backupAndLogout;
@@ -654,6 +776,39 @@
       saveVoiceSettings();
       speakNow('資料已備份完成。', 'backup', true);
     };
+    q('#loginMusicInput').onchange = async event => {
+      try {
+        const file = event.target.files?.[0]; if (!file) return;
+        settings.loginMusicData = await fileToDataUrl(file);
+        settings.loginMusicName = file.name;
+        q('#loginMusicName').textContent = `目前登入音樂：${file.name}`;
+        originalToast('登入音樂已載入，請按儲存設定');
+      } catch (error) { originalToast(error.message || '登入音樂讀取失敗'); }
+    };
+    q('#logoutMusicInput').onchange = async event => {
+      try {
+        const file = event.target.files?.[0]; if (!file) return;
+        settings.logoutMusicData = await fileToDataUrl(file);
+        settings.logoutMusicName = file.name;
+        q('#logoutMusicName').textContent = `目前登出音樂：${file.name}`;
+        originalToast('登出音樂已載入，請按儲存設定');
+      } catch (error) { originalToast(error.message || '登出音樂讀取失敗'); }
+    };
+    q('#saveLoginLogoutSound').onclick = () => {
+      settings.loginSoundEnabled = q('#loginSoundEnabled').checked;
+      settings.loginWelcomeText = q('#loginWelcomeText').value.trim() || '歡迎進入{系統名稱}';
+      settings.loginPlayMode = q('#loginPlayMode').value;
+      settings.logoutSoundEnabled = q('#logoutSoundEnabled').checked;
+      settings.logoutSoundMode = q('#logoutSoundMode').value;
+      saveSettings();
+      applyAudioSettings();
+      originalToast('登入／登出設定已儲存');
+      speak('登入與登出設定已儲存完成。', 'success');
+    };
+    q('#testLoginSound').onclick = () => { voiceReady = true; playLoginWelcome(); };
+    q('#testLogoutSound').onclick = () => { voiceReady = true; playLogoutSound(); };
+    q('#removeLoginMusic').onclick = () => { settings.loginMusicData=''; settings.loginMusicName=''; saveSettings(); applyAudioSettings(); originalToast('登入音樂已移除'); };
+    q('#removeLogoutMusic').onclick = () => { settings.logoutMusicData=''; settings.logoutMusicName=''; saveSettings(); applyAudioSettings(); originalToast('登出音樂已移除'); };
 
     q('#changePassword').onclick = async () => {
       const oldPassword = q('#oldPassword').value;
@@ -682,7 +837,7 @@
 
     const copySystemInfo = q('#copySystemInfo');
     if (copySystemInfo) copySystemInfo.onclick = async () => {
-      const text = `${typeof getSystemName === 'function' ? getSystemName() : '雙發付款管理系統'}\nV8.3 DEV Build 021\n資料庫版本：DB 3.0\n最後更新：2026/07/29`;
+      const text = `${typeof getSystemName === 'function' ? getSystemName() : '雙發付款管理系統'}\nV8.3 DEV Build 023\n資料庫版本：DB 3.0\n最後更新：2026/07/29`;
       try {
         await navigator.clipboard.writeText(text);
         originalToast('系統資訊已複製');
@@ -753,6 +908,7 @@
     if (id === 'settings') {
       syncLoginBrand();
       applyVoiceSettings();
+    applyAudioSettings();
       renderUser();
     }
     if (id === 'revisions') renderCorrections();
