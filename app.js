@@ -107,6 +107,23 @@ $('#saveBtn').onclick=async()=>{
     $('#searchInput').value='';$('#statusFilter').value='';runSearch();
     // 儲存完成立即跳到本筆明細，避免使用者再次按儲存。
     history=['home','search','detail'];openDetail(id);toast('付款資料已儲存');
+    // 郵寄支票可連續新增：每存完一筆就詢問是否繼續，避免反覆回首頁。
+    if(p.method==='郵寄支票'){
+      const repeatDefaults={month:p.month,rate:p.rate||'95',roundMode:p.roundMode||'ones'};
+      setTimeout(()=>{
+        const again=confirm('本筆郵寄支票已儲存完成。\n\n要再新增一筆郵寄支票嗎？\n\n按「確定」繼續新增；按「取消」留在本筆明細。');
+        if(!again)return;
+        start();
+        $('#payMonth').value=repeatDefaults.month||new Date().toISOString().slice(0,7);
+        $('#rate').value=repeatDefaults.rate;
+        $('#roundMode').value=repeatDefaults.roundMode;
+        updateCalculation();
+        history=['home','vendor'];
+        show('vendor',false);
+        toast('請輸入下一家廠商代號');
+        setTimeout(()=>$('#vendorInput')?.focus(),120);
+      },350);
+    }
   }catch(err){
     db.payments=db.payments.filter(x=>x.id!==id);
     if(usedCheck)Object.assign(usedCheck,{status:'未使用',dueDate:'',paymentId:''});
