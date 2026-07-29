@@ -1,9 +1,9 @@
-const CACHE_NAME='shuangfa-payment-v7.0-official-1';
+const CACHE_NAME='shuangfa-payment-v8.1-check-format-1';
 const APP_SHELL=[
   './',
   './index.html',
-  './styles.css?v=80',
-  './app.js?v=80',
+  './styles.css?v=81',
+  './app.js?v=81',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
