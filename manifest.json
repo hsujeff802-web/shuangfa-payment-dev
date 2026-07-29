@@ -1,7 +1,7 @@
 {
-  "name": "雙發付款管理系統 V8.3 DEV Build 019・登出備份語音延遲版",
+  "name": "雙發付款管理系統 V8.3 DEV Build 020・版本資訊與紀錄密碼移除版",
   "short_name": "雙發付款",
-  "start_url": "./index.html?v=8319",
+  "start_url": "./index.html?v=8320",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f1f9fa",

@@ -1,9 +1,9 @@
-const CACHE_NAME='shuangfa-payment-v8.3-build019-logout-backup-voice-delay';
+const CACHE_NAME='shuangfa-payment-v8.3-build020-version-revision-delete';
 const APP_SHELL=[
   './',
   './index.html',
-  './styles.css?v=8319',
-  './app.js?v=8319','./v83.js?v=8319',
+  './styles.css?v=8320',
+  './app.js?v=8320','./v83.js?v=8320',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'

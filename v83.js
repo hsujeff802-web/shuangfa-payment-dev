@@ -1,4 +1,4 @@
-/* 雙發付款管理系統 V8.3 DEV Build 017
+/* 雙發付款管理系統 V8.3 DEV Build 020
    登入權限、已付款鎖定、修改紀錄、智慧語音提醒 */
 (() => {
   'use strict';
@@ -252,6 +252,11 @@
         <label>再次輸入新密碼<input id="newPassword2" type="password" minlength="4"></label>
         <button id="changePassword" class="primary full">修改密碼</button>
         <button id="logoutBtn" class="secondary full">登出</button>
+      </div>
+      <div class="card" id="systemInfoCard"><h3>ℹ️ 系統資訊</h3>
+        <div class="backup-status"><b>目前版本</b><br>V8.3 DEV Build 020<br><small>版本資訊與修改紀錄密碼移除版</small></div>
+        <p class="hint">最後更新：2026/07/29<br>資料庫版本：DB 3.0</p>
+        <button id="copySystemInfo" class="secondary full">📋 複製系統資訊</button>
       </div>
 `);
   }
@@ -516,14 +521,51 @@
     speak('修改紀錄已儲存，原始付款資料沒有變動。', 'success');
   }
 
-  function correctionCard(correction) {
+  function correctionCard(correction, allowDelete = true) {
     return `<div class="correction-row">
       <h4>${esc(correction.serial)}｜${esc(correction.vendorCode)} ${esc(correction.vendor)}</h4>
       <div class="correction-change"><span><small>修改前</small><b>${esc(correction.oldValue)}</b></span><strong>→</strong><span><small>修改後</small><b>${esc(correction.newValue)}</b></span></div>
       <p>項目：${esc(correction.fieldLabel)}<br>原因：${esc(correction.reason)}</p>
       <small>${esc(correction.operator)}｜${new Date(correction.createdAt).toLocaleString('zh-TW')}</small>
       <button class="secondary full" data-revision-payment="${esc(correction.paymentId)}">查看原始付款</button>
+      ${allowDelete ? `<button class="secondary full revision-delete-btn" data-delete-revision="${esc(correction.id)}">🗑️ 移除此筆修改紀錄</button>` : ''}
     </div>`;
+  }
+
+  async function deleteCorrection(id) {
+    if (currentUser?.role !== 'admin') return toast('只有管理員可以移除修改紀錄');
+    const correction = (db.correctionLogs || []).find(x => x.id === id);
+    if (!correction) return toast('找不到這筆修改紀錄');
+
+    const password = prompt('移除修改紀錄需要輸入目前登入密碼：');
+    if (password === null) return;
+    if (!password) return toast('請輸入密碼');
+
+    const auth = await ensureAuth();
+    const user = auth.users.find(x => x.code === currentUser.code && x.enabled !== false);
+    if (!user || user.passwordHash !== await hash(password)) {
+      speak('密碼錯誤，無法移除修改紀錄。', 'error', true);
+      return toast('密碼錯誤，無法移除');
+    }
+
+    if (!confirm(`確定要移除此筆修改紀錄嗎？\n\n${correction.serial}｜${correction.vendorCode} ${correction.vendor}\n${correction.fieldLabel}：${correction.oldValue} → ${correction.newValue}`)) return;
+
+    db.correctionLogs = (db.correctionLogs || []).filter(x => x.id !== id);
+    saveAudit('移除修改紀錄', {
+      correctionId: correction.id,
+      serial: correction.serial,
+      vendorCode: correction.vendorCode,
+      vendor: correction.vendor,
+      fieldLabel: correction.fieldLabel
+    });
+    try { save(); } catch (error) {
+      console.error('移除修改紀錄失敗', error);
+      return toast('移除失敗，請稍後再試');
+    }
+    renderCorrections();
+    if (currentDetailId) renderDetailCorrections(currentDetailId);
+    originalToast('修改紀錄已移除');
+    speak('修改紀錄已移除。', 'success');
   }
 
   function renderCorrections() {
@@ -531,7 +573,7 @@
     const all = Array.isArray(db.correctionLogs) ? db.correctionLogs : [];
     const list = all.filter(x => !search || [x.serial, x.vendorCode, x.vendor, x.fieldLabel, x.reason, x.operator, x.newValue].join(' ').toLowerCase().includes(search));
     q('#revisionCount').textContent = `共 ${all.length} 筆｜目前顯示 ${list.length} 筆`;
-    q('#revisionList').innerHTML = list.length ? list.map(correctionCard).join('') : '<div class="correction-empty">目前沒有修改紀錄。</div>';
+    q('#revisionList').innerHTML = list.length ? list.map(x => correctionCard(x, true)).join('') : '<div class="correction-empty">目前沒有修改紀錄。</div>';
     qa('[data-revision-payment]').forEach(button => {
       button.onclick = () => {
         const id = button.dataset.revisionPayment;
@@ -539,11 +581,14 @@
         openDetail(id);
       };
     });
+    qa('[data-delete-revision]').forEach(button => {
+      button.onclick = () => deleteCorrection(button.dataset.deleteRevision);
+    });
   }
 
   function renderDetailCorrections(paymentId) {
     const list = (db.correctionLogs || []).filter(x => x.paymentId === paymentId);
-    q('#detailRevisionHistory').innerHTML = `<h3>修改紀錄</h3>${list.length ? list.map(correctionCard).join('') : '<div class="correction-empty">目前沒有修改紀錄，原始資料保持不變。</div>'}`;
+    q('#detailRevisionHistory').innerHTML = `<h3>修改紀錄</h3>${list.length ? list.map(x => correctionCard(x, false)).join('') : '<div class="correction-empty">目前沒有修改紀錄，原始資料保持不變。</div>'}`;
     qa('#detailRevisionHistory [data-revision-payment]').forEach(button => button.remove());
   }
 
@@ -601,6 +646,18 @@
       saveAudit('修改密碼');
       originalToast('密碼已修改');
       speak('密碼已修改完成。', 'success');
+    };
+
+    const copySystemInfo = q('#copySystemInfo');
+    if (copySystemInfo) copySystemInfo.onclick = async () => {
+      const text = `${typeof getSystemName === 'function' ? getSystemName() : '雙發付款管理系統'}\nV8.3 DEV Build 020\n資料庫版本：DB 3.0\n最後更新：2026/07/29`;
+      try {
+        await navigator.clipboard.writeText(text);
+        originalToast('系統資訊已複製');
+        speak('系統資訊已複製。', 'success');
+      } catch {
+        prompt('請複製以下系統資訊：', text);
+      }
     };
 
     q('#exportBtn').addEventListener('click', () => {
