@@ -1,4 +1,4 @@
-const CACHE_NAME='shuangfa-payment-v8.3-build005-storage';
+const CACHE_NAME='shuangfa-payment-v8.3-build006-storage';
 const APP_SHELL=[
   './',
   './index.html',
