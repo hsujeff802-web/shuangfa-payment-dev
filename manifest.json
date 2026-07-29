@@ -1,7 +1,7 @@
 {
-  "name": "雙發付款管理系統 V8.3 DEV Build 011・郵寄貼紙筆數版",
+  "name": "雙發付款管理系統 V8.3 DEV Build 012・設定與修改紀錄分離版",
   "short_name": "雙發付款",
-  "start_url": "./index.html?v=8311",
+  "start_url": "./index.html?v=8312",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f1f9fa",

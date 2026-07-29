@@ -1,9 +1,9 @@
-const CACHE_NAME='shuangfa-payment-v8.3-build011-mail-sticker';
+const CACHE_NAME='shuangfa-payment-v8.3-build012-settings-revisions';
 const APP_SHELL=[
   './',
   './index.html',
-  './styles.css?v=8311',
-  './app.js?v=8311','./v83.js?v=8311',
+  './styles.css?v=8312',
+  './app.js?v=8312','./v83.js?v=8312',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'

@@ -172,7 +172,7 @@
         <div class="login-panel">
           <img src="icon-192.png" alt="雙發付款" class="login-logo">
           <h2>雙發付款管理系統</h2>
-          <p>V8.3 DEV Build 010・5.6 智慧語音安全版</p>
+          <p>V8.3 DEV Build 012・設定與修改紀錄分離版</p>
           <label>登入代碼<input id="loginCode" autocomplete="username" value="admin"></label>
           <label>登入密碼<input id="loginPassword" type="password" autocomplete="current-password" inputmode="numeric"></label>
           <label class="remember-row"><input id="rememberLogin" type="checkbox" checked> 記住登入</label>
@@ -207,6 +207,17 @@
     q('#detailImages').insertAdjacentHTML('beforebegin', '<div id="detailRevisionHistory"></div>');
     q('#editPaymentBtn').textContent = '新增修改紀錄';
 
+    q('#settings').insertAdjacentHTML('beforebegin', `
+      <section id="revisions" class="page">
+        <h2>修改紀錄</h2>
+        <div class="card" id="revisionCenterCard">
+          <p class="hint">已付款資料不能直接修改。每次更正都會保留修改前、修改後、原因、記錄人及時間。</p>
+          <input id="revisionSearch" placeholder="搜尋廠商、序號、修改項目或原因">
+          <p id="revisionCount" class="hint"></p>
+          <div id="revisionList"></div>
+        </div>
+      </section>`);
+
     q('#settings').insertAdjacentHTML('beforeend', `
       <div class="card" id="voiceSettingsCard"><h3>🔊 智慧語音提醒</h3>
         <p class="hint">可用中文語音說出輸入錯誤、付款完成、備份完成及支票到期提醒。iPhone／iPad 第一次播放時請先點一下畫面。</p>
@@ -230,12 +241,7 @@
         <button id="changePassword" class="primary full">修改密碼</button>
         <button id="logoutBtn" class="secondary full">登出</button>
       </div>
-      <div class="card" id="revisionCenterCard"><h3>📝 修改紀錄</h3>
-        <p class="hint">已付款資料不能直接修改。每次更正都會保留修改前、修改後、原因、記錄人及時間。</p>
-        <input id="revisionSearch" placeholder="搜尋廠商、序號、修改項目或原因">
-        <p id="revisionCount" class="hint"></p>
-        <div id="revisionList"></div>
-      </div>`);
+`);
   }
 
   function showLogin() {
@@ -585,9 +591,8 @@
     };
 
     q('#homeRevisionCard').onclick = () => {
-      show('settings');
+      show('revisions');
       renderCorrections();
-      setTimeout(() => q('#revisionCenterCard').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
     };
     q('#revisionSearch').oninput = renderCorrections;
 
@@ -614,8 +619,8 @@
     if (id === 'settings') {
       applyVoiceSettings();
       renderUser();
-      renderCorrections();
     }
+    if (id === 'revisions') renderCorrections();
   };
 
   const originalOpenDetail = openDetail;
