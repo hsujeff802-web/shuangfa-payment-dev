@@ -418,3 +418,57 @@ button:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
 .photo-viewer img{width:100%;height:100%;max-width:1200px;max-height:calc(100vh - 100px);object-fit:contain;border-radius:8px;touch-action:pinch-zoom}
 .photo-viewer-close{position:fixed;top:max(14px,env(safe-area-inset-top));right:16px;width:48px;height:48px;border:0;border-radius:50%;background:rgba(255,255,255,.96);color:#111;font-size:34px;line-height:1;font-weight:700;z-index:100000;box-shadow:0 4px 18px rgba(0,0,0,.3)}
 .photo-viewer-hint{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);color:#fff;background:rgba(0,0,0,.55);padding:7px 14px;border-radius:999px;font-size:14px;white-space:nowrap}
+
+
+/* Build 016：登入畫面 Logo 置中、系統名稱同步 */
+.login-gate{
+  position:fixed;
+  inset:0;
+  z-index:100000;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  overflow-y:auto;
+  padding:max(28px,env(safe-area-inset-top)) 18px max(28px,env(safe-area-inset-bottom));
+  background:linear-gradient(160deg,#eef9fa 0%,#f8fcfc 55%,#e8f7f7 100%);
+}
+.login-gate.hidden{display:none!important}
+.login-panel{
+  width:min(100%,520px);
+  margin:auto;
+  padding:26px 22px 24px;
+  border:1px solid #d2e7e9;
+  border-radius:26px;
+  background:rgba(255,255,255,.97);
+  box-shadow:0 20px 55px rgba(17,88,94,.16);
+}
+.login-brand{text-align:center;margin-bottom:20px}
+.login-logo{
+  display:block;
+  width:154px;
+  height:154px;
+  margin:0 auto 18px;
+  object-fit:contain;
+  border-radius:26px;
+  box-shadow:0 10px 28px rgba(6,83,90,.16);
+}
+.login-brand h2{
+  margin:0;
+  color:var(--brand-deep);
+  font-size:clamp(25px,7vw,34px);
+  line-height:1.25;
+  text-align:center;
+  word-break:break-word;
+}
+.login-brand p{margin:10px 0 0;color:var(--muted);font-size:14px;font-weight:800;text-align:center}
+.login-panel>small{display:block;margin-top:12px;text-align:center;color:var(--muted)}
+.remember-row{display:flex;align-items:center;justify-content:flex-start;gap:10px}
+.remember-row input{width:30px;height:30px;min-height:30px;accent-color:var(--brand)}
+.login-message{min-height:24px;margin-top:10px;text-align:center;color:#a33;font-weight:800}
+body.login-locked{overflow:hidden}
+body.login-locked>.topbar,body.login-locked>main,body.login-locked>#photoViewer{visibility:hidden!important;pointer-events:none!important}
+@media(max-width:520px){
+  .login-gate{padding-left:14px;padding-right:14px}
+  .login-panel{padding:22px 18px 20px;border-radius:22px}
+  .login-logo{width:138px;height:138px}
+}

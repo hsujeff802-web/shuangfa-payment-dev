@@ -1,4 +1,4 @@
-/* 雙發付款管理系統 V8.3 DEV Build 010
+/* 雙發付款管理系統 V8.3 DEV Build 016
    登入權限、已付款鎖定、修改紀錄、智慧語音提醒 */
 (() => {
   'use strict';
@@ -170,9 +170,11 @@
     document.body.insertAdjacentHTML('afterbegin', `
       <div id="loginGate" class="login-gate hidden" aria-modal="true" role="dialog">
         <div class="login-panel">
-          <img src="icon-192.png" alt="雙發付款" class="login-logo">
-          <h2>雙發付款管理系統</h2>
-          <p>V8.3 DEV Build 014・正式測試版</p>
+          <div class="login-brand">
+            <img src="icon-192.png" alt="系統 Logo" class="login-logo">
+            <h2 id="loginSystemName">雙發付款管理系統</h2>
+            <p>V8.3 DEV Build 016・Logo置中名稱同步版</p>
+          </div>
           <label>登入代碼<input id="loginCode" autocomplete="username" value="admin"></label>
           <label>登入密碼<input id="loginPassword" type="password" autocomplete="current-password" inputmode="numeric"></label>
           <label class="remember-row"><input id="rememberLogin" type="checkbox" checked> 記住登入</label>
@@ -244,13 +246,24 @@
 `);
   }
 
+  function syncLoginBrand() {
+    const name = (typeof getSystemName === 'function' ? getSystemName() : (settings?.systemName || '雙發付款管理系統'));
+    const title = q('#loginSystemName');
+    if (title) title.textContent = name;
+    const logo = q('.login-logo');
+    if (logo) logo.alt = `${name} Logo`;
+  }
+
   function showLogin() {
+    syncLoginBrand();
+    document.body.classList.add('login-locked');
     q('#loginGate').classList.remove('hidden');
     setTimeout(() => q('#loginPassword').focus(), 100);
   }
 
   function hideLogin() {
     q('#loginGate').classList.add('hidden');
+    document.body.classList.remove('login-locked');
   }
 
   function resetIdleTimer() {
@@ -617,6 +630,7 @@
   show = function(id, push = true) {
     originalShow(id, push);
     if (id === 'settings') {
+      syncLoginBrand();
       applyVoiceSettings();
       renderUser();
     }
@@ -631,6 +645,7 @@
 
   async function init() {
     injectUI();
+    syncLoginBrand();
     settings.voiceEnabled = settings.voiceEnabled !== false;
     settings.voiceErrors = settings.voiceErrors !== false;
     settings.voiceSuccess = settings.voiceSuccess !== false;
