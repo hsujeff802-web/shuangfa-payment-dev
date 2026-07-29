@@ -1,19 +1,19 @@
 :root{
-  --bg:#eef4f5;
+  --bg:#f1f9fa;
   --surface:#ffffff;
-  --surface-soft:#f7fafb;
-  --ink:#183238;
-  --muted:#6d8085;
-  --brand:#075b63;
-  --brand-deep:#06474e;
-  --brand-light:#dff1f1;
+  --surface-soft:#f8fcfc;
+  --ink:#17383e;
+  --muted:#698287;
+  --brand:#159aa3;
+  --brand-deep:#0b747d;
+  --brand-light:#e1f7f8;
   --accent:#d79a36;
   --accent-soft:#fff3dc;
-  --line:#d8e4e6;
+  --line:#d5e8ea;
   --success:#16734d;
   --danger:#ad3f44;
-  --shadow-sm:0 4px 14px rgba(9,67,73,.08);
-  --shadow:0 12px 34px rgba(9,67,73,.12);
+  --shadow-sm:0 5px 16px rgba(18,119,126,.09);
+  --shadow:0 14px 38px rgba(18,119,126,.13);
   --radius:18px;
 }
 
@@ -24,8 +24,8 @@ body{
   min-height:100%;
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang TC","Microsoft JhengHei","Noto Sans TC",sans-serif;
   background:
-    radial-gradient(circle at 92% 4%,rgba(34,151,158,.12),transparent 29rem),
-    linear-gradient(180deg,#f7fbfb 0,#eef4f5 42%,#edf2f3 100%);
+    radial-gradient(circle at 92% 3%,rgba(67,202,202,.18),transparent 28rem),
+    linear-gradient(180deg,#ffffff 0,#f3fbfb 44%,#eef8f9 100%);
   color:var(--ink);
   font-size:16px;
   line-height:1.55;
@@ -47,11 +47,13 @@ button{touch-action:manipulation}
   color:#fff;
   padding:calc(12px + env(safe-area-inset-top)) 16px 12px;
   background:
-    radial-gradient(circle at 85% -20%,rgba(255,255,255,.24),transparent 14rem),
-    linear-gradient(135deg,var(--brand-deep),#08727a 62%,#0b8187);
-  box-shadow:0 8px 26px rgba(5,57,62,.2);
+    radial-gradient(circle at 86% -25%,rgba(255,255,255,.36),transparent 15rem),
+    linear-gradient(135deg,#148f98 0%,#25b2b9 58%,#62d2cb 100%);
+  box-shadow:0 8px 26px rgba(15,118,126,.18);
 }
-.topbar>div{text-align:center;min-width:0}
+.topbar>div{grid-column:2;grid-row:1;text-align:center;min-width:0}
+.topbar #backBtn{grid-column:1;grid-row:1}
+.topbar #homeBtn{grid-column:3;grid-row:1}
 .topbar h1{margin:0;font-size:21px;line-height:1.2;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topbar p{margin:4px 0 0;font-size:13px;font-weight:650;opacity:.9}
 .version-tag{
@@ -66,6 +68,7 @@ button{touch-action:manipulation}
   font-size:10px;
   font-weight:700;
   letter-spacing:.03em;
+  white-space:nowrap;
 }
 .navbtn{
   width:44px;
@@ -93,9 +96,9 @@ main{width:min(100%,820px);margin:0 auto;padding:18px 14px calc(42px + env(safe-
   overflow:hidden;
   margin:3px 0 16px;
   padding:24px 22px;
-  border:1px solid rgba(7,91,99,.1);
+  border:1px solid rgba(21,154,163,.12);
   border-radius:24px;
-  background:linear-gradient(135deg,#fff,#edf9f9);
+  background:linear-gradient(135deg,#ffffff,#e9fbfb);
   box-shadow:var(--shadow);
 }
 .hero::after{
@@ -108,8 +111,8 @@ main{width:min(100%,820px);margin:0 auto;padding:18px 14px calc(42px + env(safe-
   display:grid;
   place-items:center;
   border-radius:50%;
-  background:linear-gradient(145deg,rgba(8,118,126,.12),rgba(8,118,126,.02));
-  color:rgba(7,91,99,.15);
+  background:linear-gradient(145deg,rgba(36,178,185,.14),rgba(36,178,185,.025));
+  color:rgba(11,116,125,.14);
   font-size:72px;
   font-weight:900;
 }
@@ -162,10 +165,10 @@ main{width:min(100%,820px);margin:0 auto;padding:18px 14px calc(42px + env(safe-
   min-height:154px;
   background:
     radial-gradient(circle at 90% 5%,rgba(255,255,255,.2),transparent 12rem),
-    linear-gradient(135deg,var(--brand-deep),#08737b);
+    linear-gradient(135deg,#138c95,#2bb7b9 70%,#57cbc5);
   color:#fff;
   border-color:transparent;
-  box-shadow:0 14px 34px rgba(7,91,99,.24);
+  box-shadow:0 14px 34px rgba(19,140,149,.22);
 }
 .home-card.primary::before{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.16)}
 .home-card.primary span{color:rgba(255,255,255,.78)}
@@ -181,7 +184,7 @@ main{width:min(100%,820px);margin:0 auto;padding:18px 14px calc(42px + env(safe-
   padding:16px 18px;
   border:1px solid var(--line);
   border-radius:19px;
-  background:linear-gradient(135deg,#fff,#f3f9f9);
+  background:linear-gradient(135deg,#fff,#eefbfb);
   color:var(--brand-deep);
   font-size:22px;
   font-weight:850;
@@ -194,10 +197,10 @@ main{width:min(100%,820px);margin:0 auto;padding:18px 14px calc(42px + env(safe-
   display:grid;
   place-items:center;
   border-radius:13px;
-  background:linear-gradient(135deg,var(--brand),#0a7b82);
+  background:linear-gradient(135deg,#1497a0,#36bdbe);
   color:#fff;
   font-size:17px;
-  box-shadow:0 6px 14px rgba(7,91,99,.22);
+  box-shadow:0 6px 14px rgba(20,151,160,.2);
 }
 
 /* 表單 */
