@@ -436,3 +436,17 @@ input[type="range"]{min-height:34px;padding:0;border:0;box-shadow:none;backgroun
 .correction-empty{padding:14px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);text-align:center}
 #detailRevisionHistory{margin-top:18px}#detailRevisionHistory>h3{color:var(--brand-deep)}
 @media(max-width:520px){.voice-grid{grid-template-columns:1fr}.correction-change{grid-template-columns:1fr}.correction-change strong{transform:rotate(90deg)}}
+
+/* V8.3 Build 002：批次郵寄 */
+.mail-vendor-group{margin:14px 0;border:1px solid #cfe9eb;border-radius:18px;background:#fff;overflow:hidden;box-shadow:0 8px 22px rgba(25,120,128,.08)}
+.mail-vendor-head{display:flex;align-items:center;gap:10px;padding:14px 16px;background:linear-gradient(135deg,#eaffff,#f6ffff);font-weight:800}
+.mail-vendor-head input,.mail-item input{width:22px;height:22px;flex:0 0 auto}
+.mail-vendor-head .mail-count{margin-left:auto;font-size:.9rem;color:#39777c}
+.mail-item{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:13px 16px;border-top:1px solid #edf5f5}
+.mail-item-main b{display:block}.mail-item-main small{display:block;color:#638085;margin-top:3px}
+.mail-amount{font-weight:800;white-space:nowrap}
+.mail-empty{padding:28px;text-align:center;color:#678;background:#fff;border-radius:16px}
+.sticky-actions{position:sticky;bottom:8px;z-index:5;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0;padding:10px;border-radius:18px;background:rgba(255,255,255,.94);box-shadow:0 10px 30px rgba(0,0,0,.15);backdrop-filter:blur(8px)}
+.batch-history-row{padding:10px 0;border-bottom:1px solid #edf1f1}.batch-history-row:last-child{border-bottom:0}
+.batch-history-row b,.batch-history-row small{display:block}.batch-history-row small{color:#63777a;margin-top:4px}
+@media(max-width:560px){.mail-item{grid-template-columns:auto 1fr}.mail-amount{grid-column:2}.sticky-actions{grid-template-columns:1fr}}
