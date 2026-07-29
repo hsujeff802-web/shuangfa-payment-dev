@@ -1,4 +1,4 @@
-/* 雙發付款管理系統 V8.3 DEV Build 023
+/* 雙發付款管理系統 V8.3 DEV Build 024
    登入權限、已付款鎖定、修改紀錄、智慧語音提醒 */
 (() => {
   'use strict';
@@ -254,7 +254,9 @@
         <div class="inline"><button id="testLoginSound" class="secondary">試聽登入聲音</button><button id="removeLoginMusic" class="secondary">移除登入音樂</button></div>
         <hr>
         <label class="toggle-row"><span><b>啟用登出聲音</b><small>完成登出前播放</small></span><input id="logoutSoundEnabled" type="checkbox"></label>
-        <label>登出聲音<select id="logoutSoundMode"><option value="windows">Windows 風格提示音</option><option value="custom">自訂音樂</option><option value="none">無聲</option></select></label>
+        <label>登出聲音<select id="logoutSoundMode"><option value="windows">Windows 風格提示音</option><option value="windowsxp">Windows XP 關機風格聲音</option><option value="custom">自訂音樂</option><option value="none">無聲</option></select></label>
+        <label>登出自訂詞<input id="logoutFarewellText" maxlength="80" placeholder="謝謝使用{系統名稱}，再見"></label>
+        <label>登出播放方式<select id="logoutPlayMode"><option value="sound">只播放登出聲音</option><option value="voice">只播放自訂詞</option><option value="soundVoice">先登出聲音、再自訂詞</option><option value="voiceSound">先自訂詞、再登出聲音</option></select></label>
         <label class="secondary full file-label">選擇登出音樂<input id="logoutMusicInput" type="file" accept="audio/*,.mp3,.wav,.m4a,.aac"></label>
         <div id="logoutMusicName" class="backup-status">尚未選擇登出音樂</div>
         <div class="inline"><button id="testLogoutSound" class="secondary">試聽登出聲音</button><button id="removeLogoutMusic" class="secondary">移除登出音樂</button></div>
@@ -369,7 +371,9 @@
       logoutEnabled: settings.logoutSoundEnabled !== false,
       logoutMode: settings.logoutSoundMode || 'windows',
       logoutMusicData: settings.logoutMusicData || '',
-      logoutMusicName: settings.logoutMusicName || ''
+      logoutMusicName: settings.logoutMusicName || '',
+      logoutText: settings.logoutFarewellText || '謝謝使用{系統名稱}，再見',
+      logoutPlayMode: settings.logoutPlayMode || 'sound'
     };
   }
 
@@ -417,11 +421,22 @@
     return speakPromise(text);
   }
 
+  async function playLogoutBaseSound(a) {
+    if (a.logoutMode === 'none') return;
+    if (a.logoutMode === 'custom' && a.logoutMusicData) return playAudioData(a.logoutMusicData);
+    if (a.logoutMode === 'windowsxp') return playWindowsXPStyleShutdownSound();
+    return playWindowsStyleLogoutSound();
+  }
+
   async function playLogoutSound() {
     const a = audioSettings();
-    if (!a.logoutEnabled || a.logoutMode === 'none') return;
-    if (a.logoutMode === 'custom' && a.logoutMusicData) return playAudioData(a.logoutMusicData);
-    return playWindowsStyleLogoutSound();
+    if (!a.logoutEnabled) return;
+    const systemName = typeof getSystemName === 'function' ? getSystemName() : '雙發付款管理系統';
+    const text = String(a.logoutText || '謝謝使用{系統名稱}，再見').replaceAll('{系統名稱}', systemName);
+    if (a.logoutPlayMode === 'voice') return speakPromise(text);
+    if (a.logoutPlayMode === 'soundVoice') { await playLogoutBaseSound(a); return speakPromise(text); }
+    if (a.logoutPlayMode === 'voiceSound') { await speakPromise(text); return playLogoutBaseSound(a); }
+    return playLogoutBaseSound(a);
   }
 
   function fileToDataUrl(file) {
@@ -442,6 +457,8 @@
     q('#loginPlayMode').value = a.loginMode;
     q('#logoutSoundEnabled').checked = a.logoutEnabled;
     q('#logoutSoundMode').value = a.logoutMode;
+    q('#logoutFarewellText').value = a.logoutText;
+    q('#logoutPlayMode').value = a.logoutPlayMode;
     q('#loginMusicName').textContent = a.loginMusicName ? `目前登入音樂：${a.loginMusicName}` : '尚未選擇登入音樂';
     q('#logoutMusicName').textContent = a.logoutMusicName ? `目前登出音樂：${a.logoutMusicName}` : '尚未選擇登出音樂';
   }
@@ -457,6 +474,48 @@
       overlay.querySelectorAll('[data-choice]').forEach(btn => btn.onclick = () => { const value=btn.dataset.choice; overlay.remove(); resolve(value); });
       overlay.onclick = event => { if (event.target === overlay) { overlay.remove(); resolve('cancel'); } };
     });
+  }
+
+  function playWindowsXPStyleShutdownSound() {
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return Promise.resolve();
+      const context = new AudioContextClass();
+      const now = context.currentTime;
+      const master = context.createGain();
+      master.gain.setValueAtTime(0.0001, now);
+      master.gain.exponentialRampToValueAtTime(0.14, now + 0.04);
+      master.gain.exponentialRampToValueAtTime(0.0001, now + 2.2);
+      master.connect(context.destination);
+      const notes = [
+        {f:659.25,t:0.00,d:0.55,v:0.75},
+        {f:523.25,t:0.18,d:0.70,v:0.68},
+        {f:392.00,t:0.42,d:0.85,v:0.60},
+        {f:329.63,t:0.72,d:1.10,v:0.52}
+      ];
+      notes.forEach(note => {
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        const start = now + note.t;
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(note.f, start);
+        oscillator.frequency.exponentialRampToValueAtTime(note.f * 0.985, start + note.d);
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.exponentialRampToValueAtTime(note.v, start + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + note.d);
+        oscillator.connect(gain);
+        gain.connect(master);
+        oscillator.start(start);
+        oscillator.stop(start + note.d + 0.05);
+      });
+      return new Promise(resolve => setTimeout(() => {
+        context.close().catch(() => {});
+        resolve();
+      }, 2250));
+    } catch (error) {
+      console.warn('Windows XP 關機風格聲音播放失敗', error);
+      return Promise.resolve();
+    }
   }
 
   function playWindowsStyleLogoutSound() {
@@ -800,6 +859,8 @@
       settings.loginPlayMode = q('#loginPlayMode').value;
       settings.logoutSoundEnabled = q('#logoutSoundEnabled').checked;
       settings.logoutSoundMode = q('#logoutSoundMode').value;
+      settings.logoutFarewellText = q('#logoutFarewellText').value.trim() || '謝謝使用{系統名稱}，再見';
+      settings.logoutPlayMode = q('#logoutPlayMode').value;
       saveSettings();
       applyAudioSettings();
       originalToast('登入／登出設定已儲存');
@@ -837,7 +898,7 @@
 
     const copySystemInfo = q('#copySystemInfo');
     if (copySystemInfo) copySystemInfo.onclick = async () => {
-      const text = `${typeof getSystemName === 'function' ? getSystemName() : '雙發付款管理系統'}\nV8.3 DEV Build 023\n資料庫版本：DB 3.0\n最後更新：2026/07/29`;
+      const text = `${typeof getSystemName === 'function' ? getSystemName() : '雙發付款管理系統'}\nV8.3 DEV Build 024\n資料庫版本：DB 3.0\n最後更新：2026/07/29`;
       try {
         await navigator.clipboard.writeText(text);
         originalToast('系統資訊已複製');
