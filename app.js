@@ -200,7 +200,47 @@ function receiptPrintHtml(p){
 $('#settleBtn').onclick=()=>{const p=db.payments.find(x=>x.id===currentDetailId);if(!p)return;p.status='已銷帳';p.settledAt=new Date().toISOString();save();toast('已完成銷帳並停止提醒');openDetail(p.id);renderDue()};
 $('#editPaymentBtn').onclick=()=>{const p=db.payments.find(x=>x.id===currentDetailId);if(!p)return toast('找不到付款資料');const due=prompt('應付金額',p.amountDue??'');if(due===null)return;const paid=prompt('實付金額',p.amountPaid??'');if(paid===null)return;const note=prompt('扣款內容',p.deductionNote??'');if(note===null)return;const status=prompt('狀態：待轉帳／已開支票／已銷帳／作廢',p.status??'');if(status===null)return;if(!/^\d+(\.\d+)?$/.test(String(due).trim())||!/^\d+(\.\d+)?$/.test(String(paid).trim()))return toast('金額格式不正確');p.amountDue=Number(due);p.amountPaid=Number(paid);p.deductionAmount=Math.max(0,p.amountDue-p.amountPaid);p.deductionNote=String(note).trim();if(['待轉帳','已開支票','已銷帳','作廢'].includes(String(status).trim()))p.status=String(status).trim();p.updatedAt=new Date().toISOString();save();toast('付款資料已修改');openDetail(p.id);runSearch();renderDue()};
 $('#printReceiptBtn').onclick=()=>{const p=db.payments.find(x=>x.id===currentDetailId);if(!p)return toast('找不到付款資料');printDocument(getSystemName()+' 付款簽收單 '+p.serial,receiptPrintHtml(p))};
-function renderChecks(){$('#manageBank').innerHTML=db.banks.map(b=>`<option>${esc(b)}</option>`).join('');$('#manageBank').onchange=renderCheckList;renderCheckList()}function renderCheckList(){const b=$('#manageBank').value||db.banks[0],a=db.checks[b]||[];$('#checkList').innerHTML=`<h3>${esc(b)} 支票</h3>`+(a.length?a.map(x=>`<div class="record"><b>${esc(x.number)}</b><div class="meta">${esc(x.status||'未使用')}${x.dueDate?'｜到期 '+esc(x.dueDate):''}</div></div>`).join(''):'<p class="hint">尚未建立支票號碼。</p>')}function normalizeCheckNo(v){return formatCheckNo(v)}
+function renderChecks(){
+  $('#manageBank').innerHTML=db.banks.map(b=>`<option>${esc(b)}</option>`).join('');
+  $('#manageBank').onchange=renderCheckList;
+  renderCheckList();
+}
+function checkIsReferenced(number){
+  return db.payments.some(p=>formatCheckNo(p.checkNumber||'')===formatCheckNo(number||''));
+}
+function removeUnusedCheck(bank,number){
+  const list=db.checks[bank]||[];
+  const item=list.find(x=>x.number===number);
+  if(!item)return toast('找不到這張支票');
+  if((item.status||'未使用')!=='未使用'||checkIsReferenced(number))return toast('這張支票已使用，不能刪除');
+  if(!confirm(`確定刪除測試支票 ${number}？`))return;
+  db.checks[bank]=list.filter(x=>x.number!==number);
+  try{save()}catch(err){return toast(err.message)}
+  toast('測試支票已刪除');
+  renderCheckList();
+}
+function clearUnusedChecksForBank(){
+  const bank=$('#manageBank').value||db.banks[0];
+  const list=db.checks[bank]||[];
+  const removable=list.filter(x=>(x.status||'未使用')==='未使用'&&!checkIsReferenced(x.number));
+  if(!removable.length)return toast('沒有可清除的未使用支票');
+  if(!confirm(`確定清除「${bank}」共 ${removable.length} 張未使用支票？\n已使用及付款紀錄中的支票都會保留。`))return;
+  const word=prompt('為避免誤刪，請輸入「清除」');
+  if(word!=='清除')return toast('未清除支票');
+  const removeSet=new Set(removable.map(x=>x.number));
+  db.checks[bank]=list.filter(x=>!removeSet.has(x.number));
+  try{save()}catch(err){return toast(err.message)}
+  toast(`已清除 ${removable.length} 張未使用支票`);
+  renderCheckList();
+}
+function renderCheckList(){
+  const b=$('#manageBank').value||db.banks[0],a=db.checks[b]||[];
+  const unused=a.filter(x=>(x.status||'未使用')==='未使用'&&!checkIsReferenced(x.number)).length;
+  $('#checkList').innerHTML=`<div class="card"><h3>${esc(b)} 支票</h3><p class="hint">共 ${a.length} 張，可刪除的未使用支票 ${unused} 張。已使用支票不可刪除。</p>${unused?'<button id="clearUnusedChecks" class="secondary danger full">清除本銀行未使用的測試支票</button>':''}</div>`+(a.length?a.map(x=>{const referenced=checkIsReferenced(x.number);const canDelete=(x.status||'未使用')==='未使用'&&!referenced;return `<div class="record"><b>${esc(x.number)}</b><div class="meta">${esc(x.status||'未使用')}${x.dueDate?'｜到期 '+esc(x.dueDate):''}${referenced?'｜已有付款紀錄':''}</div>${canDelete?`<button class="secondary danger" data-delete-check="${esc(x.number)}">刪除</button>`:''}</div>`}).join(''):'<p class="hint">尚未建立支票號碼。</p>');
+  $('#clearUnusedChecks')?.addEventListener('click',clearUnusedChecksForBank);
+  $$('[data-delete-check]').forEach(btn=>btn.onclick=()=>removeUnusedCheck(b,btn.dataset.deleteCheck));
+}
+function normalizeCheckNo(v){return formatCheckNo(v)}
 function validCheckNo(v){return /^(?:[A-Z]+-\d+|\d+)$/.test(v)}
 $('#newCheckNo').addEventListener('input',e=>e.target.value=normalizeCheckNo(e.target.value));
 $('#checkPrefix').addEventListener('input',e=>e.target.value=e.target.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,2));
