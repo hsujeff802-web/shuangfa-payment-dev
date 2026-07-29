@@ -1,5 +1,5 @@
 {
-  "name": "雙發付款管理系統 V8.3 DEV Build 008・強制更新照片保留版",
+  "name": "雙發付款管理系統 V8.3 DEV Build 010・版本顯示修正版",
   "short_name": "雙發付款",
   "start_url": "./index.html?v=8305",
   "scope": "./",
