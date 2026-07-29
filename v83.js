@@ -151,11 +151,17 @@
 
   function speak(text, kind = 'success', force = false) {
     if (!force && !voiceAllowed(kind)) return;
-    if (!voiceReady && !force) {
-      pendingVoice.push({ text, kind });
-      return;
-    }
-    speakNow(text, kind, force);
+    const isWorkCompletion = /完成|已儲存|已備份|已清除|已修改|壓縮完成|還原完成/.test(String(text || ''));
+    const play = () => {
+      if (!voiceReady && !force) {
+        pendingVoice.push({ text, kind });
+        return;
+      }
+      speakNow(text, kind, force);
+    };
+    // 儲存、備份、完成工作後先停一秒，再播放中文語音。
+    if (isWorkCompletion && (kind === 'success' || kind === 'backup')) setTimeout(play, 1000);
+    else play();
   }
 
   function unlockVoice() {
@@ -337,8 +343,8 @@
     queueStartupAnnouncements();
   }
 
-  function logout(auto = false) {
-    if (currentUser) saveAudit(auto ? '閒置自動登出' : '登出');
+  function logout(auto = false, skipAudit = false) {
+    if (currentUser && !skipAudit) saveAudit(auto ? '閒置自動登出' : '登出');
     localStorage.removeItem(SESSION_KEY);
     sessionStorage.removeItem(SESSION_KEY);
     currentUser = null;
@@ -545,9 +551,24 @@
     q('#loginSubmit').onclick = login;
     q('#loginCode').addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); q('#loginPassword').focus(); } });
     q('#loginPassword').addEventListener('keydown', event => { if (event.key === 'Enter') login(); });
-    q('#logoutBtn').onclick = () => { if (confirm('確定要登出嗎？')) logout(false); };
+    const backupAndLogout = () => {
+      if (!confirm('確定要登出嗎？\n\n系統會先自動下載完整備份，再登出。')) return;
+      try {
+        if (currentUser) saveAudit('登出');
+        if (typeof downloadBackup === 'function') downloadBackup(false);
+        originalToast('完整備份已完成，準備登出');
+        speak('資料已備份完成。', 'backup');
+      } catch (error) {
+        console.error('登出備份失敗', error);
+        originalToast('備份失敗，尚未登出');
+        speak('備份失敗，系統尚未登出。', 'error', true);
+        return;
+      }
+      setTimeout(() => logout(false, true), 1500);
+    };
+    q('#logoutBtn').onclick = backupAndLogout;
     const homeLogoutBtn = q('#homeLogoutBtn');
-    if (homeLogoutBtn) homeLogoutBtn.onclick = () => { if (confirm('確定要登出嗎？')) logout(false); };
+    if (homeLogoutBtn) homeLogoutBtn.onclick = backupAndLogout;
 
     ['voiceEnabled', 'voiceErrors', 'voiceSuccess', 'voiceBackup', 'voiceDue'].forEach(id => q(`#${id}`).addEventListener('change', saveVoiceSettings));
     ['voiceVolume', 'voiceRate'].forEach(id => q(`#${id}`).addEventListener('input', saveVoiceSettings));

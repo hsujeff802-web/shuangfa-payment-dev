@@ -1,7 +1,7 @@
 {
-  "name": "雙發付款管理系統 V8.3 DEV Build 018・登入後首頁登出版",
+  "name": "雙發付款管理系統 V8.3 DEV Build 019・登出備份語音延遲版",
   "short_name": "雙發付款",
-  "start_url": "./index.html?v=8318",
+  "start_url": "./index.html?v=8319",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f1f9fa",
