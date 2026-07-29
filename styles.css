@@ -410,3 +410,7 @@ button:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
   .card{box-shadow:none;border:0}
   .report-table{font-size:11px;border-radius:0}
 }
+
+/* ===== V8.3 DEV Build 001：登入與智慧語音 ===== */
+.login-gate{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:20px;background:linear-gradient(150deg,rgba(230,252,255,.97),rgba(255,255,255,.98),rgba(234,248,246,.97));backdrop-filter:blur(10px)}
+.login-gate.hidden{display:none}.login-panel{width:min(430px,100%);padding:28px;border:1px solid rgba(21,154,163,.18);border-radius:28px;background:#fff;box-shadow:0 24px 70px rgba(23,79,84,.18);text-align:center}.login-logo{width:76px;height:76px;border-radius:20px;box-shadow:0 10px 25px rgba(21,154,163,.22)}.login-panel h2{margin:14px 0 4px}.login-panel p{margin:0 0 18px;color:#4d7377}.login-panel label{text-align:left}.remember-row{display:flex!important;align-items:center;gap:8px;margin:6px 0 16px}.remember-row input{width:auto}.login-message{min-height:28px;color:#b42318;font-weight:700;padding-top:8px}.login-user-tag{display:block;margin-top:5px;color:#075e66;font-weight:700;white-space:nowrap}.audit-row{display:grid;gap:4px;padding:12px 0;border-bottom:1px solid #e2efef}.audit-row span,.audit-row small{color:#5d7275}.audit-row small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
