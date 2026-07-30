@@ -493,3 +493,6 @@ body.login-locked>.topbar,body.login-locked>main,body.login-locked>#photoViewer{
 .signature-amount-label{font-size:16px;font-weight:900;color:#6a7d7f}
 .signature-amount{font-size:clamp(38px,11vw,62px);line-height:1.15;font-weight:1000;letter-spacing:.5px;color:#b32121;margin:5px 0 10px;word-break:break-all}
 .signature-warning{font-size:16px;font-weight:900;color:#8a4a00;background:#fff4d7;border-radius:12px;padding:9px 10px}
+
+/* Build 025.1 高畫質照片預覽 */
+.capture-preview-modal{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:16px}.capture-preview-modal.hidden{display:none}.capture-preview-card{width:min(760px,100%);max-height:94vh;overflow:auto;background:#fff;border-radius:20px;padding:18px;text-align:center}.capture-preview-card h2{margin:0 0 12px}.capture-preview-card img{display:block;width:100%;max-height:68vh;object-fit:contain;background:#111;border-radius:12px}.capture-preview-card .two{margin-top:14px}.photo-thumb-wrap{position:relative;display:inline-block}.photo-thumb-wrap img{display:block}.photo-remove{position:absolute;right:-6px;top:-6px;width:30px;height:30px;border:0;border-radius:50%;background:#c62828;color:#fff;font-size:22px;line-height:28px;padding:0;box-shadow:0 2px 8px rgba(0,0,0,.3)}
