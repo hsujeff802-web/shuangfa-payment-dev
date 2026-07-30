@@ -32,7 +32,7 @@ function save(){
 }
 function saveSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings))}
 function getSystemName(){return String(settings.systemName||'雙發付款管理系統').trim()||'雙發付款管理系統'}
-function applySystemName(){const name=getSystemName();const h=$('#systemNameHeader');if(h)h.textContent=name;document.title=`${name} V8.3 DEV Build 021・系統資訊與登入登出語音修正版`;const loginTitle=document.querySelector('#loginSystemName');if(loginTitle)loginTitle.textContent=name;const apple=document.querySelector('meta[name="apple-mobile-web-app-title"]');if(apple)apple.setAttribute('content',name.slice(0,12))}
+function applySystemName(){const name=getSystemName();const h=$('#systemNameHeader');if(h)h.textContent=name;document.title=`${name} V8.3 DEV Build 025・簽名金額確認與語音收款版`;const loginTitle=document.querySelector('#loginSystemName');if(loginTitle)loginTitle.textContent=name;const apple=document.querySelector('meta[name="apple-mobile-web-app-title"]');if(apple)apple.setAttribute('content',name.slice(0,12))}
 function applyHomeLabels(){const d={payment:'新增付款',settlement:'查詢付款資料',reminder:'支票管理',report:'報表中心'},x={...d,...(settings.homeLabels||{})};$$('[data-home-label]').forEach(el=>el.textContent=x[el.dataset.homeLabel]||d[el.dataset.homeLabel]);const hero=$('#homeHeroTitle');if(hero)hero.textContent=[x.payment,x.settlement,x.reminder,x.report].join('、')}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function formatCheckNo(v){const raw=String(v||'').trim().toUpperCase().replace(/[－–—]/g,'-').replace(/\s+/g,'');const m=raw.match(/^([A-Z]+)-?(\d+)$/);return m?`${m[1]}-${m[2]}`:raw}
@@ -71,9 +71,46 @@ if(isMail&&mailBatchSession.ids.length){
 show('check')})}
 $('#manualCheckNumber')?.addEventListener('input',e=>e.target.value=formatCheckNo(e.target.value));$('#manualCheckNumber')?.addEventListener('blur',e=>e.target.value=formatCheckNo(e.target.value));$('#checkNext').onclick=()=>{const manual=formatCheckNo($('#manualCheckNumber')?.value||'');const selected=formatCheckNo($('#checkNumber').value);const number=manual||selected;Object.assign(draft,{checkNumber:number,checkDueDate:$('#checkDueDate').value,transferDate:$('#transferDate').value,checkAmount:$('#checkAmount').value,mailTotalCount:Math.max(1,Number($('#mailTotalCount')?.value||1)),mailStickerNumber:($('#mailStickerNumber')?.value||'').trim(),mailDate:$('#mailDate')?.value||''});if(isCheckMethod(draft.method)&&(!draft.checkNumber||!draft.checkDueDate))return toast('請輸入或選擇票號，並填到期日');if(draft.method==='郵寄支票'&&(!draft.mailTotalCount||draft.mailTotalCount<1))return toast('請填寫本次郵寄共幾筆');if(draft.method==='郵寄支票'&&!draft.mailStickerNumber)return toast('請填寫郵局郵寄貼紙號碼');if(isCheckMethod(draft.method)&&manual){db.checks[draft.bank]??=[];if(!db.checks[draft.bank].some(x=>x.number===manual))db.checks[draft.bank].push({number:manual,status:'未使用'})}if(!isCheckMethod(draft.method)&&!draft.transferDate)return toast('請填預定轉帳日');showPhotosPage()};
 function showPhotosPage(){$('#checkPhotoBlock').classList.toggle('hidden',!isCheckMethod(draft.method));show('photos')}
+function updateSignaturePaymentInfo(){
+  const vendor=[draft.vendorCode||'',draft.vendor||''].filter(Boolean).join(' ');
+  const method=draft.method||'付款方式未設定';
+  const amount=Number(draft.amountPaid||0);
+  const vendorEl=$('#signatureVendor'),methodEl=$('#signatureMethod'),amountEl=$('#signatureAmount');
+  if(vendorEl)vendorEl.textContent=vendor||'廠商';
+  if(methodEl)methodEl.textContent=`付款方式：${method}`;
+  if(amountEl)amountEl.textContent=`NT$ ${money(amount)}`;
+}
+let signatureReminderTimer=null,signatureReminderRepeat=null,signatureConfirmed=false;
+function stopSignatureReminder(){clearTimeout(signatureReminderTimer);clearInterval(signatureReminderRepeat);signatureReminderTimer=null;signatureReminderRepeat=null}
+function startSignatureReminder(){
+  stopSignatureReminder();signatureConfirmed=false;
+  signatureReminderTimer=setTimeout(()=>{
+    if(signatureConfirmed)return;
+    speak('簽名完成，請按確認收款鍵。');
+    signatureReminderRepeat=setInterval(()=>{if(!signatureConfirmed)speak('請按確認收款鍵，完成本次收款。')},6000);
+  },1000);
+}
+function chineseMoney(n){
+  n=Math.round(Number(n)||0);if(n===0)return'零';
+  const d='零一二三四五六七八九',u=['','十','百','千'],g=['','萬','億','兆'];
+  let parts=[],gi=0;
+  while(n>0){let x=n%10000,n//=10000,part='',zero=false;
+    for(let i=0;i<4;i++){const v=x%10;x=Math.floor(x/10);if(v){part=d[v]+u[i]+(zero?'零':'')+part;zero=false}else if(part)zero=true}
+    if(part)parts.unshift(part+g[gi]);gi++}
+  let out=parts.join('零').replace(/零+/g,'零').replace(/零$/,'');
+  if(out.startsWith('一十'))out=out.slice(1);return out;
+}
+function speakCollectedAmount(p){
+  const amount=chineseMoney(p.amountPaid);
+  let text='';
+  if(p.method==='現金')text=`您好，您已收取現金新台幣${amount}元，謝謝。`;
+  else if(isCheckMethod(p.method))text=`您好，您已收取支票一張，金額新台幣${amount}元，謝謝。`;
+  else text=`您好，您已確認收取新台幣${amount}元，謝謝。`;
+  setTimeout(()=>speak(text),1000);
+}
 function fileData(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const max=520,scale=Math.min(1,max/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(im.width*scale));cv.height=Math.max(1,Math.round(im.height*scale));cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);res(cv.toDataURL('image/jpeg',.34))};im.onerror=rej;im.src=r.result};r.onerror=rej;r.readAsDataURL(f)})}
 $('#invoicePhoto').onchange=async e=>{for(const f of e.target.files)invoicePhotos.push(await fileData(f));renderPhotos()};$('#checkPhoto').onchange=async e=>{if(e.target.files[0])checkPhoto=await fileData(e.target.files[0]);renderPhotos()};function renderPhotos(){$('#invoicePreview').innerHTML=invoicePhotos.map(x=>`<img src="${x}">`).join('');$('#checkPreview').innerHTML=checkPhoto?`<img src="${checkPhoto}">`:''}
-$('#photosNext').onclick=()=>show('signature');
+$('#photosNext').onclick=()=>{updateSignaturePaymentInfo();signatureConfirmed=false;stopSignatureReminder();show('signature')};
 const c=$('#signatureCanvas'),ctx=c.getContext('2d');
 function fillSignatureWhite(){ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);ctx.restore()}
 function exportSignatureImage(){const out=document.createElement('canvas');out.width=c.width;out.height=c.height;const o=out.getContext('2d');o.fillStyle='#fff';o.fillRect(0,0,out.width,out.height);o.drawImage(c,0,0);return out.toDataURL('image/jpeg',.58)}
@@ -86,12 +123,12 @@ function sizeCanvas(){
   if(old){const im=new Image();im.onload=()=>ctx.drawImage(im,0,0,r.width,r.height);im.src=old}
 }
 function pos(e){const r=c.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
-function begin(e){e.preventDefault();drawing=true;hasSignature=true;lastPoint=pos(e);try{c.setPointerCapture(e.pointerId)}catch{}}
+function begin(e){e.preventDefault();drawing=true;hasSignature=true;signatureConfirmed=false;stopSignatureReminder();lastPoint=pos(e);try{c.setPointerCapture(e.pointerId)}catch{}}
 function move(e){if(!drawing)return;e.preventDefault();const q=pos(e);ctx.beginPath();ctx.moveTo(lastPoint.x,lastPoint.y);ctx.lineTo(q.x,q.y);ctx.stroke();lastPoint=q}
-function end(e){if(!drawing)return;drawing=false;try{c.releasePointerCapture(e.pointerId)}catch{};signatureData=exportSignatureImage()}
+function end(e){if(!drawing)return;drawing=false;try{c.releasePointerCapture(e.pointerId)}catch{};signatureData=exportSignatureImage();startSignatureReminder()}
 c.addEventListener('pointerdown',begin,{passive:false});c.addEventListener('pointermove',move,{passive:false});c.addEventListener('pointerup',end,{passive:false});c.addEventListener('pointercancel',end,{passive:false});
-$('#clearSignature').onclick=()=>{fillSignatureWhite();signatureData='';hasSignature=false};
-$('#signatureNext').onclick=()=>{if(drawing)end({pointerId:-1});if(!hasSignature||!signatureData)return toast('請先完成廠商簽名');renderSummary();show('confirm')};
+$('#clearSignature').onclick=()=>{stopSignatureReminder();signatureConfirmed=false;fillSignatureWhite();signatureData='';hasSignature=false};
+$('#signatureNext').onclick=async()=>{if(drawing)end({pointerId:-1});if(!hasSignature||!signatureData)return toast('請先完成廠商簽名');signatureConfirmed=true;stopSignatureReminder();await savePayment(true,$('#signatureNext'))};
 function voucher(p){if(p.method==='支票')return `${p.bank||''} ${formatCheckNo(p.checkNumber||'')}`.trim();return p.method||''}
 function statusFor(p){if(p.method==='現金')return '已銷帳';if(p.method==='郵寄支票')return '待寄出';if(p.method==='支票')return '已開支票';return '待轉帳'}
 function addToMailBatch(p){
@@ -131,11 +168,11 @@ function htmlRows(r){return r.map(([k,v])=>`<div class="row"><div class="key">${
 function renderSummary(){$('#summary').innerHTML=htmlRows([...rows(draft),['請款單照片',invoicePhotos.length+' 張'],['支票照片',checkPhoto?'1 張':'0 張'],['廠商簽名','已完成']])}
 function nextSerial(){const d=new Date(),z=n=>String(n).padStart(2,'0'),prefix=`FK${d.getFullYear()}${z(d.getMonth()+1)}${z(d.getDate())}`;const nums=db.payments.filter(p=>p.serial?.startsWith(prefix)).map(p=>Number(p.serial.slice(-4))).filter(Number.isFinite);return prefix+String((nums.length?Math.max(...nums):0)+1).padStart(4,'0')}
 $('#editBtn').onclick=()=>show('payment');
-$('#saveBtn').onclick=async()=>{
+async function savePayment(skipConfirm=false,sourceBtn=null){
   if(isSaving)return;
   if(!signatureData)return toast('簽名資料尚未完成，請返回重新簽名');
-  if(!confirm('確定要儲存這筆付款資料嗎？'))return;
-  isSaving=true;const btn=$('#saveBtn');btn.disabled=true;btn.textContent='儲存中…';
+  if(!skipConfirm&&!confirm('確定要儲存這筆付款資料嗎？'))return;
+  isSaving=true;const btn=sourceBtn||$('#saveBtn');btn.disabled=true;btn.textContent='儲存中…';
   const id=crypto.randomUUID?crypto.randomUUID():String(Date.now());
   // 先建立唯一儲存識別碼，再檢查重複，避免連按或瀏覽器重送。
   draft.clientSaveToken=draft.clientSaveToken||id;
@@ -155,7 +192,7 @@ $('#saveBtn').onclick=async()=>{
     addToMailBatch(p);
     $('#searchInput').value='';$('#statusFilter').value='';runSearch();
     // 儲存完成立即跳到本筆明細，避免使用者再次按儲存。
-    history=['home','search','detail'];openDetail(id);toast('付款資料已儲存');
+    history=['home','search','detail'];openDetail(id);toast('付款資料已儲存');speakCollectedAmount(p);
     if(p.method==='郵寄支票'){
       const repeatDefaults={month:p.month,rate:p.rate||'95',roundMode:p.roundMode||'ones'};
       setTimeout(()=>{
@@ -177,7 +214,8 @@ $('#saveBtn').onclick=async()=>{
     console.error(err);alert(err.message||'儲存失敗，請稍後再試');
     isSaving=false;btn.disabled=false;btn.textContent='確認存檔';
   }
-};$('#newAgain').onclick=()=>{start();history=['home','vendor'];show('vendor',false)};$('#viewLast').onclick=()=>openDetail(lastId);
+}
+$('#saveBtn').onclick=()=>savePayment(false,$('#saveBtn'));$('#newAgain').onclick=()=>{start();history=['home','vendor'];show('vendor',false)};$('#viewLast').onclick=()=>openDetail(lastId);
 $('#searchInput').oninput=runSearch;$('#statusFilter').onchange=runSearch;function runSearch(){const q=($('#searchInput').value||'').trim().toLowerCase(),st=$('#statusFilter').value,a=db.payments.filter(p=>(!q||[p.vendor,p.vendorCode,p.serial,p.checkNumber,p.bank,p.mailStickerNumber].join(' ').toLowerCase().includes(q))&&(!st||p.status===st));const counter=$('#paymentCount');if(counter)counter.textContent=`全部 ${db.payments.length} 筆｜目前顯示 ${a.length} 筆`;$('#paymentList').innerHTML=a.length?a.map(p=>`<div class="record"><h3>${esc(p.serial)}｜${esc(p.vendorCode)} ${esc(p.vendor)}</h3><div class="meta">${esc(p.month)}｜實付 $${money(p.amountPaid)}<br>付款憑證：${esc(voucher(p))}　<span class="status-pill">${esc(p.status)}</span></div><button class="secondary full" data-detail="${p.id}">查看明細</button></div>`).join(''):'<p class="hint">尚無符合資料。</p>';$$('[data-detail]').forEach(b=>b.onclick=()=>openDetail(b.dataset.detail))}
 function openDetail(id){const p=db.payments.find(x=>x.id===id);if(!p)return;currentDetailId=id;$('#detailBody').innerHTML=htmlRows([...rows(p),['建立時間',new Date(p.createdAt).toLocaleString('zh-TW')]]);$('#settleBtn').classList.toggle('hidden',p.status==='已銷帳'||p.status==='作廢');const imgs=[...(p.invoicePhotos||[]),p.checkPhoto,p.signatureData].filter(Boolean);$('#detailImages').innerHTML=imgs.map(x=>`<img src="${x}">`).join('');show('detail')}
 function printDocument(title,body){
@@ -267,7 +305,7 @@ $('#saveHomeLabels').onclick=()=>{settings.homeLabels={payment:$('#homeLabelPaym
 $('#addBank').onclick=()=>{const v=$('#newBank').value.trim();if(!v)return;if(!db.banks.includes(v))db.banks.push(v);db.checks[v]??=[];$('#newBank').value='';save();renderSettings()};$('#addMethod').onclick=()=>{const v=$('#newMethod').value.trim();if(v&&!db.methods.includes(v))db.methods.push(v);$('#newMethod').value='';save();renderSettings()};
 $('#autoBackupToggle').onchange=e=>{settings.autoBackup=e.target.checked;saveSettings();renderBackupStatus()};function renderBackupStatus(){const snaps=JSON.parse(localStorage.getItem(BACKUP_KEY)||'[]'),last=localStorage.getItem('shuangfa_last_backup');$('#backupStatus').innerHTML=`自動備份：<b>${settings.autoBackup?'開啟':'關閉'}</b><br>手機內備份：${snaps.length} 份<br>最近完整備份：${last?new Date(last).toLocaleString('zh-TW'):'尚未備份'}`}
 function backupFileName(){const d=new Date(),z=n=>String(n).padStart(2,'0');return `雙發付款完整備份_${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}_${z(d.getHours())}-${z(d.getMinutes())}.json`}
-function downloadBackup(msg=true){const payload={app:getSystemName(),version:'V8.3 DEV Build 021・系統資訊與登入登出語音修正版',backupAt:new Date().toISOString(),data:db,settings},blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=backupFileName();a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);localStorage.setItem('shuangfa_last_backup',new Date().toISOString());renderBackupStatus();renderStorageStatus();if(msg){toast('完整備份檔已產生');if(window.shuangfaSpeak)window.shuangfaSpeak('資料已備份完成。','backup')}}
+function downloadBackup(msg=true){const payload={app:getSystemName(),version:'V8.3 DEV Build 025・簽名金額確認與語音收款版',backupAt:new Date().toISOString(),data:db,settings},blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=backupFileName();a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);localStorage.setItem('shuangfa_last_backup',new Date().toISOString());renderBackupStatus();renderStorageStatus();if(msg){toast('完整備份檔已產生');if(window.shuangfaSpeak)window.shuangfaSpeak('資料已備份完成。','backup')}}
 $('#exportBtn').onclick=()=>downloadBackup(true);$('#compressPhotosBtn')?.addEventListener('click',compressAllPhotosSafely);$('#importInput').onchange=async e=>{try{const raw=JSON.parse(await e.target.files[0].text()),x=raw.data||raw;if(!x.payments||!x.vendors)throw 0;db=migrate(x);if(raw.settings)settings=raw.settings;save();saveSettings();renderLists();renderSettings();toast('完整備份已還原')}catch{toast('備份檔格式不正確')}};
 function createOpeningBackup(){try{if(!settings.autoBackup)return;const day=new Date().toISOString().slice(0,10),tag='open-'+day,a=JSON.parse(localStorage.getItem(BACKUP_KEY)||'[]');if(a.some(x=>x.tag===tag))return;const slim=structuredClone(db);slim.payments=(slim.payments||[]).map(x=>({...x,invoicePhotos:[],checkPhoto:'',signatureData:''}));a.unshift({at:new Date().toISOString(),tag,reason:'開啟系統自動備份',data:slim});localStorage.setItem(BACKUP_KEY,JSON.stringify(a.slice(0,7)));localStorage.setItem('shuangfa_last_auto_backup',new Date().toISOString())}catch(e){console.error('開啟自動備份失敗',e)}}
 function renderDue(){const t=new Date();t.setHours(0,0,0,0);const tm=new Date(t);tm.setDate(t.getDate()+1);const a=db.payments.filter(p=>p.status!=='已銷帳'&&p.status!=='作廢').filter(p=>{const ds=p.method==='支票'?p.checkDueDate:p.transferDate;if(!ds)return false;const d=new Date(ds+'T00:00:00');return d.getTime()===t.getTime()||d.getTime()===tm.getTime()||d<t});$('#dueNotice').classList.toggle('hidden',!a.length);if(a.length)$('#dueNotice').innerHTML='<b>🔔 付款提醒</b><br>'+a.map(p=>`${esc(p.serial)}｜${esc(p.vendor)}｜${esc(voucher(p))}｜$${money(p.amountPaid)}｜${esc(p.status)}`).join('<br>')}

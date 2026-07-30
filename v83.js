@@ -1,4 +1,4 @@
-/* 雙發付款管理系統 V8.3 DEV Build 024
+/* 雙發付款管理系統 V8.3 DEV Build 025
    登入權限、已付款鎖定、修改紀錄、智慧語音提醒 */
 (() => {
   'use strict';
@@ -898,7 +898,7 @@
 
     const copySystemInfo = q('#copySystemInfo');
     if (copySystemInfo) copySystemInfo.onclick = async () => {
-      const text = `${typeof getSystemName === 'function' ? getSystemName() : '雙發付款管理系統'}\nV8.3 DEV Build 024\n資料庫版本：DB 3.0\n最後更新：2026/07/29`;
+      const text = `${typeof getSystemName === 'function' ? getSystemName() : '雙發付款管理系統'}\nV8.3 DEV Build 025\n資料庫版本：DB 3.0\n最後更新：2026/07/29`;
       try {
         await navigator.clipboard.writeText(text);
         originalToast('系統資訊已複製');

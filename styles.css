@@ -484,3 +484,12 @@ body.login-locked>.topbar,body.login-locked>main,body.login-locked>#photoViewer{
 .login-input-row input::placeholder{color:#81989b}
 
 .home-card.logout-card{border-color:#f0c8c8;background:#fffafa;color:#8c2f2f}.home-card.logout-card::before{content:'↪';background:#fdeaea;color:#a33;border-color:#f2cccc}.home-card.logout-card span{color:#8b5a5a}
+
+
+/* Build 025：簽名頁顯示收款金額與確認提醒 */
+.signature-payment-card{margin:0 0 14px;padding:18px 14px;border:2px solid #159aa3;border-radius:20px;background:#f5ffff;text-align:center;box-shadow:0 8px 22px rgba(21,154,163,.12)}
+.signature-vendor{font-size:20px;font-weight:900;color:#174f53;margin-bottom:5px}
+.signature-method{font-size:17px;font-weight:800;color:#486b6e;margin-bottom:12px}
+.signature-amount-label{font-size:16px;font-weight:900;color:#6a7d7f}
+.signature-amount{font-size:clamp(38px,11vw,62px);line-height:1.15;font-weight:1000;letter-spacing:.5px;color:#b32121;margin:5px 0 10px;word-break:break-all}
+.signature-warning{font-size:16px;font-weight:900;color:#8a4a00;background:#fff4d7;border-radius:12px;padding:9px 10px}
