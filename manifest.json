@@ -1,5 +1,5 @@
 {
-  "name": "雙發付款管理系統 V8.3 DEV Build 025.2・簽名頁語音停止修正版",
+  "name": "雙發付款管理系統 V8.3 DEV Build 025.3・多月份與簽名語音修正版",
   "short_name": "雙發付款",
   "start_url": "./index.html?v=83252",
   "scope": "./",

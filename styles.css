@@ -502,3 +502,15 @@ body.login-locked>.topbar,body.login-locked>main,body.login-locked>#photoViewer{
 #signature>.hint{margin:5px 2px 7px;font-size:13px;line-height:1.35}
 #signature>.two{margin-top:8px}
 @media(max-height:760px){.canvas-wrap{height:48vh;min-height:300px}.signature-payment-card{padding:7px 10px}.signature-amount{font-size:clamp(27px,7vw,39px)}}
+
+
+/* Build 025.3：收款月份可多選 */
+.month-picker-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:center;margin-top:7px}
+.month-picker-row input{margin:0}
+.month-add-btn{white-space:nowrap;min-height:48px;padding:10px 14px}
+.selected-months{display:flex;flex-wrap:wrap;gap:8px;min-height:42px;padding:7px 9px;border:1px solid #c9e0e2;border-radius:13px;background:#f8ffff;margin-top:7px}
+.month-chip{display:inline-flex;align-items:center;gap:7px;border:1px solid #159aa3;border-radius:999px;background:#e9fbfc;color:#155c61;font-weight:900;padding:8px 11px;font-size:15px;box-shadow:none}
+.month-chip span{font-size:19px;line-height:1;color:#a52323}
+.month-empty{align-self:center;color:#789092;font-size:14px;padding:3px}
+.month-hint{margin-top:5px!important}
+@media(max-width:480px){.month-picker-row{grid-template-columns:1fr}.month-add-btn{width:100%}}
