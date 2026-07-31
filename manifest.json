@@ -1,7 +1,7 @@
 {
-  "name": "雙發付款管理系統 V8.3 DEV Build 025.6・確認收款與手機報表修正版",
+  "name": "雙發付款管理系統 V8.3 DEV Build 025.7・簽名語音與儲存修正版",
   "short_name": "雙發付款",
-  "start_url": "./index.html?v=83256",
+  "start_url": "./index.html?v=83257",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f1f9fa",
