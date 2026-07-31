@@ -32,7 +32,7 @@ function save(){
 }
 function saveSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings))}
 function getSystemName(){return String(settings.systemName||'雙發付款管理系統').trim()||'雙發付款管理系統'}
-function applySystemName(){const name=getSystemName();const h=$('#systemNameHeader');if(h)h.textContent=name;document.title=`${name} V8.3 DEV Build 025.3・多月份與簽名語音修正版`;const loginTitle=document.querySelector('#loginSystemName');if(loginTitle)loginTitle.textContent=name;const apple=document.querySelector('meta[name="apple-mobile-web-app-title"]');if(apple)apple.setAttribute('content',name.slice(0,12))}
+function applySystemName(){const name=getSystemName();const h=$('#systemNameHeader');if(h)h.textContent=name;document.title=`${name} V8.3 DEV Build 025.4・確認語音錯誤修正版`;const loginTitle=document.querySelector('#loginSystemName');if(loginTitle)loginTitle.textContent=name;const apple=document.querySelector('meta[name="apple-mobile-web-app-title"]');if(apple)apple.setAttribute('content',name.slice(0,12))}
 function applyHomeLabels(){const d={payment:'新增付款',settlement:'查詢付款資料',reminder:'支票管理',report:'報表中心'},x={...d,...(settings.homeLabels||{})};$$('[data-home-label]').forEach(el=>el.textContent=x[el.dataset.homeLabel]||d[el.dataset.homeLabel]);const hero=$('#homeHeroTitle');if(hero)hero.textContent=[x.payment,x.settlement,x.reminder,x.report].join('、')}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function formatCheckNo(v){const raw=String(v||'').trim().toUpperCase().replace(/[－–—]/g,'-').replace(/\s+/g,'');const m=raw.match(/^([A-Z]+)-?(\d+)$/);return m?`${m[1]}-${m[2]}`:raw}
@@ -122,7 +122,7 @@ function chineseMoney(n){
   n=Math.round(Number(n)||0);if(n===0)return'零';
   const d='零一二三四五六七八九',u=['','十','百','千'],g=['','萬','億','兆'];
   let parts=[],gi=0;
-  while(n>0){let x=n%10000,n//=10000,part='',zero=false;
+  while(n>0){let x=n%10000;n=Math.floor(n/10000);let part='',zero=false;
     for(let i=0;i<4;i++){const v=x%10;x=Math.floor(x/10);if(v){part=d[v]+u[i]+(zero?'零':'')+part;zero=false}else if(part)zero=true}
     if(part)parts.unshift(part+g[gi]);gi++}
   let out=parts.join('零').replace(/零+/g,'零').replace(/零$/,'');
