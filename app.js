@@ -32,7 +32,7 @@ function save(){
 }
 function saveSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings))}
 function getSystemName(){return String(settings.systemName||'雙發付款管理系統').trim()||'雙發付款管理系統'}
-function applySystemName(){const name=getSystemName();const h=$('#systemNameHeader');if(h)h.textContent=name;document.title=`${name} V8.3 DEV Build 025.4・確認語音錯誤修正版`;const loginTitle=document.querySelector('#loginSystemName');if(loginTitle)loginTitle.textContent=name;const apple=document.querySelector('meta[name="apple-mobile-web-app-title"]');if(apple)apple.setAttribute('content',name.slice(0,12))}
+function applySystemName(){const name=getSystemName();const h=$('#systemNameHeader');if(h)h.textContent=name;document.title=`${name} V8.3 DEV Build 025.6・確認收款與手機報表修正版`;const loginTitle=document.querySelector('#loginSystemName');if(loginTitle)loginTitle.textContent=name;const apple=document.querySelector('meta[name="apple-mobile-web-app-title"]');if(apple)apple.setAttribute('content',name.slice(0,12))}
 function applyHomeLabels(){const d={payment:'新增付款',settlement:'查詢付款資料',reminder:'支票管理',report:'報表中心'},x={...d,...(settings.homeLabels||{})};$$('[data-home-label]').forEach(el=>el.textContent=x[el.dataset.homeLabel]||d[el.dataset.homeLabel]);const hero=$('#homeHeroTitle');if(hero)hero.textContent=[x.payment,x.settlement,x.reminder,x.report].join('、')}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function formatCheckNo(v){const raw=String(v||'').trim().toUpperCase().replace(/[－–—]/g,'-').replace(/\s+/g,'');const m=raw.match(/^([A-Z]+)-?(\d+)$/);return m?`${m[1]}-${m[2]}`:raw}
@@ -118,24 +118,45 @@ function startSignatureReminder(immediate=false){
 }
 window.addEventListener('pagehide',()=>{if(isSignaturePageActive())leaveSignaturePage()});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&isSignaturePageActive())leaveSignaturePage()});
-function chineseMoney(n){
-  n=Math.round(Number(n)||0);if(n===0)return'零';
-  const d='零一二三四五六七八九',u=['','十','百','千'],g=['','萬','億','兆'];
-  let parts=[],gi=0;
-  while(n>0){let x=n%10000;n=Math.floor(n/10000);let part='',zero=false;
-    for(let i=0;i<4;i++){const v=x%10;x=Math.floor(x/10);if(v){part=d[v]+u[i]+(zero?'零':'')+part;zero=false}else if(part)zero=true}
-    if(part)parts.unshift(part+g[gi]);gi++}
-  let out=parts.join('零').replace(/零+/g,'零').replace(/零$/,'');
-  if(out.startsWith('一十'))out=out.slice(1);return out;
+function chineseMoney(value){
+  let amountNumber=Math.max(0,Math.round(Number(value)||0));
+  if(amountNumber===0)return '零';
+  const digits='零一二三四五六七八九';
+  const smallUnits=['','十','百','千'];
+  const groupUnits=['','萬','億','兆'];
+  const groups=[];
+  let groupIndex=0;
+  while(amountNumber>0){
+    let groupValue=amountNumber%10000;
+    amountNumber=Math.floor(amountNumber/10000);
+    let groupText='';
+    let pendingZero=false;
+    for(let position=0;position<4;position++){
+      const digitValue=groupValue%10;
+      groupValue=Math.floor(groupValue/10);
+      if(digitValue>0){
+        groupText=digits[digitValue]+smallUnits[position]+(pendingZero?'零':'')+groupText;
+        pendingZero=false;
+      }else if(groupText){pendingZero=true}
+    }
+    if(groupText)groups.unshift(groupText+groupUnits[groupIndex]);
+    groupIndex++;
+  }
+  let result=groups.join('零').replace(/零+/g,'零').replace(/零$/,'');
+  if(result.startsWith('一十'))result=result.slice(1);
+  return result;
 }
-function speakCollectedAmount(p){
-  const amount=chineseMoney(p.amountPaid);
-  let text='';
-  if(p.method==='現金')text=`您好，您已收取現金新台幣${amount}元，謝謝。`;
-  else if(isCheckMethod(p.method))text=`您好，您已收取支票一張，金額新台幣${amount}元，謝謝。`;
-  else text=`您好，您已確認收取新台幣${amount}元，謝謝。`;
-  setTimeout(()=>speak(text),1000);
+function speakCollectedAmount(payment){
+  try{
+    const spokenAmount=chineseMoney(payment?.amountPaid);
+    let message='';
+    if(payment?.method==='現金')message=`您好，您已收取現金新台幣${spokenAmount}元，謝謝。`;
+    else if(isCheckMethod(payment?.method))message=`您好，您已收取支票一張，金額新台幣${spokenAmount}元，謝謝。`;
+    else message=`您好，您已確認收取新台幣${spokenAmount}元，謝謝。`;
+    setTimeout(()=>{try{window.shuangfaSpeak?window.shuangfaSpeak(message,'success'):speak(message)}catch(error){console.warn('收款語音播放失敗',error)}},700);
+  }catch(error){console.warn('收款金額語音處理失敗',error)}
 }
+
 function fileData(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{try{const max=1800,scale=Math.min(1,max/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(im.width*scale));cv.height=Math.max(1,Math.round(im.height*scale));const g=cv.getContext('2d');g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(im,0,0,cv.width,cv.height);res(cv.toDataURL('image/jpeg',.92))}catch(err){rej(err)}};im.onerror=rej;im.src=r.result};r.onerror=rej;r.readAsDataURL(f)})}
 let pendingPhotoData='',pendingPhotoResolve=null;
 function confirmPhotoPreview(data){return new Promise(resolve=>{pendingPhotoData=data;pendingPhotoResolve=resolve;$('#capturePreviewImage').src=data;$('#capturePreviewModal').classList.remove('hidden')})}
@@ -226,7 +247,7 @@ async function savePayment(skipConfirm=false,sourceBtn=null){
     addToMailBatch(p);
     $('#searchInput').value='';$('#statusFilter').value='';runSearch();
     // 儲存完成立即跳到本筆明細，避免使用者再次按儲存。
-    history=['home','search','detail'];openDetail(id);toast('付款資料已儲存');speakCollectedAmount(p);
+    history=['home','search','detail'];openDetail(id);toast('付款資料已儲存');try{speakCollectedAmount(p)}catch(voiceError){console.warn('收款語音略過',voiceError)};
     if(p.method==='郵寄支票'){
       const repeatDefaults={months:[...(p.months||[])],month:p.month,rate:p.rate||'95',roundMode:p.roundMode||'ones'};
       setTimeout(()=>{
@@ -319,8 +340,8 @@ $('#addCheck').onclick=()=>{const b=$('#manageBank').value,n=normalizeCheckNo($(
 $('#addRange').onclick=()=>{const b=$('#manageBank').value,prefix=$('#checkPrefix').value.trim().toUpperCase(),a=$('#rangeStart').value.trim(),z=$('#rangeEnd').value.trim();if(!/^[A-Z]{2}$/.test(prefix))return toast('請輸入兩位英文字母，例如 AB');if(!/^\d+$/.test(a)||!/^\d+$/.test(z))return toast('起始與結束號碼請輸入純數字');const startNo=+a,endNo=+z;if(endNo<startNo||endNo-startNo>500)return toast('範圍不正確');const w=Math.max(a.length,z.length);db.checks[b]??=[];for(let n=startNo;n<=endNo;n++){const no=`${prefix}-${String(n).padStart(w,'0')}`;if(!db.checks[b].some(x=>x.number===no))db.checks[b].push({number:no,status:'未使用'})}try{save()}catch(err){return toast(err.message)}renderCheckList()};
 function renderReportControls(){$('#reportVendor').innerHTML='<option value="">全部廠商</option>'+db.vendors.map(v=>`<option value="${esc(v.code)}">${esc(vendorLabel(v))}</option>`).join('');if(!$('#reportStart').value){const y=new Date().getFullYear();$('#reportStart').value=`${y}-01-01`;$('#reportEnd').value=`${y}-12-31`}buildReport()}
 function reportData(){const code=$('#reportVendor').value,s=$('#reportStart').value,e=$('#reportEnd').value;return db.payments.filter(p=>(!code||p.vendorCode===code)&&(!s||p.createdAt.slice(0,10)>=s)&&(!e||p.createdAt.slice(0,10)<=e))}
-function buildReport(){const a=reportData(),total=a.reduce((x,p)=>x+Number(p.amountPaid||0),0),ded=a.reduce((x,p)=>x+Number(p.deductionAmount||0),0),name=$('#reportVendor').selectedOptions[0]?.text||'全部廠商';$('#reportOutput').innerHTML=`<div class="card"><h2>${esc(getSystemName())}付款報表</h2><p>廠商：${esc(name)}<br>期間：${esc($('#reportStart').value)} ～ ${esc($('#reportEnd').value)}</p><p><b>付款筆數：${a.length} 筆　實付合計：$${money(total)}　扣款合計：$${money(ded)}</b></p><table class="report-table"><thead><tr><th>序號</th><th>日期</th><th>廠商</th><th>應付</th><th>實付</th><th>付款憑證</th><th>狀態</th></tr></thead><tbody>${a.map(p=>`<tr><td>${esc(p.serial)}</td><td>${esc(p.createdAt.slice(0,10))}</td><td>${esc(p.vendorCode+' '+p.vendor)}</td><td>${money(p.amountDue)}</td><td>${money(p.amountPaid)}</td><td>${esc(voucher(p))}</td><td>${esc(p.status)}</td></tr>`).join('')}</tbody></table></div>`}
-$('#buildReport').onclick=buildReport;$('#printReport').onclick=()=>{const a=reportData(),total=a.reduce((x,p)=>x+Number(p.amountPaid||0),0),ded=a.reduce((x,p)=>x+Number(p.deductionAmount||0),0),name=$('#reportVendor').selectedOptions[0]?.text||'全部廠商';const body=`<h1>${esc(getSystemName())}－廠商付款報表</h1><div class="sub">廠商：${esc(name)}　期間：${esc($('#reportStart').value)} ～ ${esc($('#reportEnd').value)}</div><div class="summaryline">付款筆數：${a.length} 筆　實付合計：NT$ ${money(total)}　扣款合計：NT$ ${money(ded)}</div><table class="report-table"><thead><tr><th>序號</th><th>日期</th><th>廠商</th><th>應付</th><th>實付</th><th>付款憑證</th><th>狀態</th></tr></thead><tbody>${a.map(p=>`<tr><td>${esc(p.serial)}</td><td>${esc(p.createdAt.slice(0,10))}</td><td>${esc(p.vendorCode+' '+p.vendor)}</td><td>${money(p.amountDue)}</td><td>${money(p.amountPaid)}</td><td>${esc(voucher(p))}</td><td>${esc(p.status)}</td></tr>`).join('')}</tbody></table><div class="foot">列印時間：${new Date().toLocaleString('zh-TW')}</div>`;printDocument(getSystemName()+' 廠商付款報表',body)};$('#exportCsv').onclick=()=>{const a=reportData(),rows=[['序號','日期','廠商代號','廠商名稱','應付金額','比例','實付金額','扣款','付款憑證','狀態'],...a.map(p=>[p.serial,p.createdAt.slice(0,10),p.vendorCode,p.vendor,p.amountDue,p.rate,p.amountPaid,p.deductionAmount,voucher(p),p.status])],csv='\ufeff'+rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n'),blob=new Blob([csv],{type:'text/csv'}),x=document.createElement('a');x.href=URL.createObjectURL(blob);x.download=getSystemName()+'_付款報表.csv';x.click();URL.revokeObjectURL(x.href)};
+function buildReport(){const a=reportData(),total=a.reduce((x,p)=>x+Number(p.amountPaid||0),0),ded=a.reduce((x,p)=>x+Number(p.deductionAmount||0),0),name=$('#reportVendor').selectedOptions[0]?.text||'全部廠商';$('#reportOutput').innerHTML=`<div class="card"><h2>${esc(getSystemName())}付款報表</h2><p>廠商：${esc(name)}<br>期間：${esc($('#reportStart').value)} ～ ${esc($('#reportEnd').value)}</p><p><b>付款筆數：${a.length} 筆　實付合計：$${money(total)}　扣款合計：$${money(ded)}</b></p><table class="report-table"><thead><tr><th>序號</th><th>日期</th><th>廠商</th><th>應付</th><th>實付</th><th>付款憑證</th><th>狀態</th></tr></thead><tbody>${a.map(p=>`<tr><td data-label="序號">${esc(p.serial)}</td><td data-label="日期">${esc(p.createdAt.slice(0,10))}</td><td data-label="廠商">${esc(p.vendorCode+' '+p.vendor)}</td><td data-label="應付">${money(p.amountDue)}</td><td data-label="實付">${money(p.amountPaid)}</td><td data-label="付款憑證">${esc(voucher(p))}</td><td data-label="狀態">${esc(p.status)}</td></tr>`).join('')}</tbody></table></div>`}
+$('#buildReport').onclick=buildReport;$('#printReport').onclick=()=>{const a=reportData(),total=a.reduce((x,p)=>x+Number(p.amountPaid||0),0),ded=a.reduce((x,p)=>x+Number(p.deductionAmount||0),0),name=$('#reportVendor').selectedOptions[0]?.text||'全部廠商';const body=`<h1>${esc(getSystemName())}－廠商付款報表</h1><div class="sub">廠商：${esc(name)}　期間：${esc($('#reportStart').value)} ～ ${esc($('#reportEnd').value)}</div><div class="summaryline">付款筆數：${a.length} 筆　實付合計：NT$ ${money(total)}　扣款合計：NT$ ${money(ded)}</div><table class="report-table"><thead><tr><th>序號</th><th>日期</th><th>廠商</th><th>應付</th><th>實付</th><th>付款憑證</th><th>狀態</th></tr></thead><tbody>${a.map(p=>`<tr><td data-label="序號">${esc(p.serial)}</td><td data-label="日期">${esc(p.createdAt.slice(0,10))}</td><td data-label="廠商">${esc(p.vendorCode+' '+p.vendor)}</td><td data-label="應付">${money(p.amountDue)}</td><td data-label="實付">${money(p.amountPaid)}</td><td data-label="付款憑證">${esc(voucher(p))}</td><td data-label="狀態">${esc(p.status)}</td></tr>`).join('')}</tbody></table><div class="foot">列印時間：${new Date().toLocaleString('zh-TW')}</div>`;printDocument(getSystemName()+' 廠商付款報表',body)};$('#exportCsv').onclick=()=>{const a=reportData(),rows=[['序號','日期','廠商代號','廠商名稱','應付金額','比例','實付金額','扣款','付款憑證','狀態'],...a.map(p=>[p.serial,p.createdAt.slice(0,10),p.vendorCode,p.vendor,p.amountDue,p.rate,p.amountPaid,p.deductionAmount,voucher(p),p.status])],csv='\ufeff'+rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n'),blob=new Blob([csv],{type:'text/csv'}),x=document.createElement('a');x.href=URL.createObjectURL(blob);x.download=getSystemName()+'_付款報表.csv';x.click();URL.revokeObjectURL(x.href)};
 let editingVendorCode='';
 function renderVendorManager(){
   const q=($('#vendorSearchManage')?.value||'').trim().toLowerCase();
@@ -339,7 +360,7 @@ $('#saveHomeLabels').onclick=()=>{settings.homeLabels={payment:$('#homeLabelPaym
 $('#addBank').onclick=()=>{const v=$('#newBank').value.trim();if(!v)return;if(!db.banks.includes(v))db.banks.push(v);db.checks[v]??=[];$('#newBank').value='';save();renderSettings()};$('#addMethod').onclick=()=>{const v=$('#newMethod').value.trim();if(v&&!db.methods.includes(v))db.methods.push(v);$('#newMethod').value='';save();renderSettings()};
 $('#autoBackupToggle').onchange=e=>{settings.autoBackup=e.target.checked;saveSettings();renderBackupStatus()};function renderBackupStatus(){const snaps=JSON.parse(localStorage.getItem(BACKUP_KEY)||'[]'),last=localStorage.getItem('shuangfa_last_backup');$('#backupStatus').innerHTML=`自動備份：<b>${settings.autoBackup?'開啟':'關閉'}</b><br>手機內備份：${snaps.length} 份<br>最近完整備份：${last?new Date(last).toLocaleString('zh-TW'):'尚未備份'}`}
 function backupFileName(){const d=new Date(),z=n=>String(n).padStart(2,'0');return `雙發付款完整備份_${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}_${z(d.getHours())}-${z(d.getMinutes())}.json`}
-function downloadBackup(msg=true){const payload={app:getSystemName(),version:'V8.3 DEV Build 025.3・多月份與簽名語音修正版',backupAt:new Date().toISOString(),data:db,settings},blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=backupFileName();a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);localStorage.setItem('shuangfa_last_backup',new Date().toISOString());renderBackupStatus();renderStorageStatus();if(msg){toast('完整備份檔已產生');if(window.shuangfaSpeak)window.shuangfaSpeak('資料已備份完成。','backup')}}
+function downloadBackup(msg=true){const payload={app:getSystemName(),version:'V8.3 DEV Build 025.6・確認收款與手機報表修正版',backupAt:new Date().toISOString(),data:db,settings},blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=backupFileName();a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);localStorage.setItem('shuangfa_last_backup',new Date().toISOString());renderBackupStatus();renderStorageStatus();if(msg){toast('完整備份檔已產生');if(window.shuangfaSpeak)window.shuangfaSpeak('資料已備份完成。','backup')}}
 $('#exportBtn').onclick=()=>downloadBackup(true);$('#compressPhotosBtn')?.addEventListener('click',compressAllPhotosSafely);$('#importInput').onchange=async e=>{try{const raw=JSON.parse(await e.target.files[0].text()),x=raw.data||raw;if(!x.payments||!x.vendors)throw 0;db=migrate(x);if(raw.settings)settings=raw.settings;save();saveSettings();renderLists();renderSettings();toast('完整備份已還原')}catch{toast('備份檔格式不正確')}};
 function createOpeningBackup(){try{if(!settings.autoBackup)return;const day=new Date().toISOString().slice(0,10),tag='open-'+day,a=JSON.parse(localStorage.getItem(BACKUP_KEY)||'[]');if(a.some(x=>x.tag===tag))return;const slim=structuredClone(db);slim.payments=(slim.payments||[]).map(x=>({...x,invoicePhotos:[],checkPhoto:'',signatureData:''}));a.unshift({at:new Date().toISOString(),tag,reason:'開啟系統自動備份',data:slim});localStorage.setItem(BACKUP_KEY,JSON.stringify(a.slice(0,7)));localStorage.setItem('shuangfa_last_auto_backup',new Date().toISOString())}catch(e){console.error('開啟自動備份失敗',e)}}
 function renderDue(){const t=new Date();t.setHours(0,0,0,0);const tm=new Date(t);tm.setDate(t.getDate()+1);const a=db.payments.filter(p=>p.status!=='已銷帳'&&p.status!=='作廢').filter(p=>{const ds=p.method==='支票'?p.checkDueDate:p.transferDate;if(!ds)return false;const d=new Date(ds+'T00:00:00');return d.getTime()===t.getTime()||d.getTime()===tm.getTime()||d<t});$('#dueNotice').classList.toggle('hidden',!a.length);if(a.length)$('#dueNotice').innerHTML='<b>🔔 付款提醒</b><br>'+a.map(p=>`${esc(p.serial)}｜${esc(p.vendor)}｜${esc(voucher(p))}｜$${money(p.amountPaid)}｜${esc(p.status)}`).join('<br>')}
