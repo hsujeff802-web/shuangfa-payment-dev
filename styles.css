@@ -340,7 +340,7 @@ button:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
 .thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:11px}
 .thumbs img{width:100%;aspect-ratio:1;object-fit:cover;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:var(--shadow-sm)}
 .thumbs.big img{aspect-ratio:auto;max-height:360px;object-fit:contain}
-.canvas-wrap{height:47vh;min-height:320px;overflow:hidden;border:2px dashed #8eb4b8;border-radius:18px;background:#fff;box-shadow:inset 0 0 0 5px #f4f8f8}
+.canvas-wrap{height:54vh;min-height:380px;max-height:650px;overflow:hidden;border:2px dashed #8eb4b8;border-radius:18px;background:#fff;box-shadow:inset 0 0 0 5px #f4f8f8}
 .canvas-wrap canvas{display:block;width:100%;height:100%;touch-action:none}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
 .done{width:92px;height:92px;display:grid;place-items:center;margin:34px auto 15px;border-radius:50%;background:linear-gradient(145deg,#dff4e9,#f1fbf6);color:var(--success);font-size:50px;font-weight:950;box-shadow:0 12px 28px rgba(22,115,77,.14)}
@@ -487,12 +487,18 @@ body.login-locked>.topbar,body.login-locked>main,body.login-locked>#photoViewer{
 
 
 /* Build 025：簽名頁顯示收款金額與確認提醒 */
-.signature-payment-card{margin:0 0 14px;padding:18px 14px;border:2px solid #159aa3;border-radius:20px;background:#f5ffff;text-align:center;box-shadow:0 8px 22px rgba(21,154,163,.12)}
-.signature-vendor{font-size:20px;font-weight:900;color:#174f53;margin-bottom:5px}
-.signature-method{font-size:17px;font-weight:800;color:#486b6e;margin-bottom:12px}
-.signature-amount-label{font-size:16px;font-weight:900;color:#6a7d7f}
-.signature-amount{font-size:clamp(38px,11vw,62px);line-height:1.15;font-weight:1000;letter-spacing:.5px;color:#b32121;margin:5px 0 10px;word-break:break-all}
-.signature-warning{font-size:16px;font-weight:900;color:#8a4a00;background:#fff4d7;border-radius:12px;padding:9px 10px}
+.signature-payment-card{margin:0 0 7px;padding:9px 12px;border:2px solid #159aa3;border-radius:17px;background:#f5ffff;text-align:center;box-shadow:0 5px 14px rgba(21,154,163,.10)}
+.signature-vendor{font-size:17px;font-weight:900;color:#174f53;margin-bottom:2px;line-height:1.25}
+.signature-method{font-size:15px;font-weight:800;color:#486b6e;margin-bottom:4px;line-height:1.2}
+.signature-amount-label{font-size:13px;font-weight:900;color:#6a7d7f;line-height:1.15}
+.signature-amount{font-size:clamp(29px,8vw,44px);line-height:1.05;font-weight:1000;letter-spacing:.3px;color:#b32121;margin:2px 0 5px;word-break:break-all}
+.signature-warning{font-size:13px;font-weight:900;color:#8a4a00;background:#fff4d7;border-radius:10px;padding:6px 8px;line-height:1.3}
 
 /* Build 025.1 高畫質照片預覽 */
 .capture-preview-modal{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:16px}.capture-preview-modal.hidden{display:none}.capture-preview-card{width:min(760px,100%);max-height:94vh;overflow:auto;background:#fff;border-radius:20px;padding:18px;text-align:center}.capture-preview-card h2{margin:0 0 12px}.capture-preview-card img{display:block;width:100%;max-height:68vh;object-fit:contain;background:#111;border-radius:12px}.capture-preview-card .two{margin-top:14px}.photo-thumb-wrap{position:relative;display:inline-block}.photo-thumb-wrap img{display:block}.photo-remove{position:absolute;right:-6px;top:-6px;width:30px;height:30px;border:0;border-radius:50%;background:#c62828;color:#fff;font-size:22px;line-height:28px;padding:0;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+
+/* Build 025.2：方案10，上下資訊縮小、簽名區放大 */
+#signature>.step{margin-bottom:7px;padding-top:7px;padding-bottom:7px}
+#signature>.hint{margin:5px 2px 7px;font-size:13px;line-height:1.35}
+#signature>.two{margin-top:8px}
+@media(max-height:760px){.canvas-wrap{height:48vh;min-height:300px}.signature-payment-card{padding:7px 10px}.signature-amount{font-size:clamp(27px,7vw,39px)}}

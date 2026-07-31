@@ -1,4 +1,4 @@
-/* 雙發付款管理系統 V8.3 DEV Build 025
+/* 雙發付款管理系統 V8.3 DEV Build 025.2
    登入權限、已付款鎖定、修改紀錄、智慧語音提醒 */
 (() => {
   'use strict';
@@ -805,13 +805,14 @@
       const choice = await showLogoutChoice();
       if (choice === 'cancel') return;
       if (choice === 'direct' && !confirm('確定不備份就直接登出？\n\n這次不會下載備份檔。')) return;
+      if (typeof window.shuangfaStopSignatureVoice === 'function') window.shuangfaStopSignatureVoice();
       if (choice === 'backup') {
         try {
           if (currentUser) saveAudit('登出');
           if (typeof downloadBackup === 'function') downloadBackup(false);
           originalToast('完整備份已完成，準備登出');
-          speak('資料已備份完成。', 'backup');
-          await new Promise(resolve => setTimeout(resolve, 1050));
+          await speakPromise('資料已備份完成。');
+          await new Promise(resolve => setTimeout(resolve, 180));
         } catch (error) {
           console.error('登出備份失敗', error);
           originalToast('備份失敗，尚未登出');
